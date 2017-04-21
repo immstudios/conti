@@ -1,3 +1,4 @@
+import sys
 import subprocess
 
 from .common import *
@@ -26,17 +27,20 @@ class ContiSource(object):
                 "-pix_fmt", "yuv420p",
                 "-s", "1920x1080",
                 "-r", "25",
+                "-ar", "48000",
                 "-c:v", "rawvideo",
                 "-c:a", "pcm_s16le",
-                "-f", "nut",
+                "-f", "avi",
                 "-"
             ]
         self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=DEVNULL)
 
     def close(self):
+        logging.info("Closing {}".format(self))
         if self.is_running:
+            logging.info("Killing {}".format(self))
             self.proc.kill()
-            self.proc = None
+        self.proc = None
 
     def read(self, *args, **kwargs):
         if not self.proc:
@@ -46,4 +50,3 @@ class ContiSource(object):
             self.close()
             return None
         return data
-
