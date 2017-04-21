@@ -37,10 +37,12 @@ class ContiEncoder(object):
 
         cmd = [
                 "ffmpeg",
-                "-f", "nut", "-re",
+                "-re",
                 "-i", self.pipe_path,
-                "-filter:v", "setpts=N/(FRAME_RATE*TB)",
-                "-filter:a", "asetpts=N/(SAMPLE_RATE*TB)",
+# Not needed anymore, but it is really cool and can become handy some day
+#                "-filter:v", "setpts=N/(FRAME_RATE*TB)",
+#                "-filter:a", "asetpts=N/(SAMPLE_RATE*TB)",
+                "-pix_fmt", self["pixel_format"],
                 "-s", "{}x{}".format(self["width"], self["height"]),
                 "-r", str(self["frame_rate"]),
                 "-g", str(self["gop_size"]),
@@ -61,5 +63,5 @@ class ContiEncoder(object):
 
         cmd.extend(["-f", self["format"], self.parent.target])
 
-        self.proc = subprocess.Popen(cmd)#, stderr=DEVNULL)
+        self.proc = subprocess.Popen(cmd, stderr=DEVNULL)
 
