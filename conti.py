@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+import os
 import json
+
 import rex
 
 from nxtools import *
+
 from conti import Conti, ContiSource
+from conti.filters import *
 
 class Clips(object):
     """
@@ -24,16 +28,27 @@ class Clips(object):
     def get_next(self):
         path = self.clips[self.current_index % len(self.clips)]
         self.current_index += 1
-        return ContiSource(path)
+        source =  ContiSource(path)
+        source.vfilters.add(
+                    FDrawText("in", "out",
+                        text=get_base_name(path),
+                        fontsize=48,
+                        fontcolor="white",
+                        x="(w/2) - (tw/2)",
+                        y="2*lh",
+                        box=1,
+                        boxborderw=8,
+                        boxcolor="black"
+                    )
+                )
+        return source
 
 
 settings = {
-        "target" : "rtp://224.0.0.1:2000&pkt_size=1316",
-
-        # Check conti/common.py for all available settings
-        "conti_settings" : {
-            }
-    }
+    "outputs" : [ {
+        "target" : "rtp://224.0.0.1:2000&pkt_size=1316"
+    }]
+}
 
 #
 # Load custom settings from file
@@ -49,9 +64,23 @@ if os.path.exists(settings_file):
         settings.update(custom_settings)
 
 
-
 if __name__ == "__main__":
     clips = Clips("data/")
+    conti = Conti(clips.get_next, **settings)
 
-    conti = Conti(clips.get_next, settings["target"], **settings["conti_settings"])
+    conti.vfilters.add(
+            FSource("data/logo.png", "watermark"),
+            FOverlay("in", "watermark", "out"),
+            FDrawText("out", "out",
+                text="'%{localtime\:%T}'",
+                fontsize=48,
+                fontcolor="white",
+                x="(w/2) - (tw/2)",
+                y="h - (2*lh)",
+                box=1,
+                boxborderw=20,
+                boxcolor="black"
+            )
+        )
+
     conti.start()

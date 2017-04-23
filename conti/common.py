@@ -14,12 +14,18 @@ DEVNULL = open(os.devnull, 'w')
 def get_settings(**kwargs):
     settings = {
         "pipe_path"     : "pipe.nut",   # Use unique path if you run multichannel setup on one machine
+        "frame_rate"    : 25,
+    }
+    settings.update(kwargs)
+    return settings
 
+
+def get_profile(**kwargs):
+    settings = {
         "width"         : 640,
         "height"        : 360,
-        "frame_rate"    : 25,
-        "pixel_format"  : "yuv420p",
 
+        "pixel_format"  : "yuv420p",
         "video_bitrate" : "800k",       # By default, video quality is quite low...
         "video_preset"  : "fast",       # ... because of my aging development machine.
         "video_profile" : "main",
@@ -32,4 +38,3 @@ def get_settings(**kwargs):
     }
     settings.update(kwargs)
     return settings
-
