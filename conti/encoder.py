@@ -3,12 +3,15 @@ import time
 import subprocess
 
 from .common import *
+from .filters import FilterChain
 
 class ContiEncoder(object):
     def __init__(self, parent):
         self.parent = parent
         self.pipe = None
         self.proc = None
+        self.afilters = FilterChain()
+        self.vfilters = FilterChain()
 
     def __getitem__(self, key):
         return self.parent.settings[key]
@@ -39,29 +42,37 @@ class ContiEncoder(object):
                 "ffmpeg",
                 "-re",
                 "-i", self.pipe_path,
-# Not needed anymore, but it is really cool and can become handy some day
-#                "-filter:v", "setpts=N/(FRAME_RATE*TB)",
-#                "-filter:a", "asetpts=N/(SAMPLE_RATE*TB)",
-                "-pix_fmt", self["pixel_format"],
-                "-s", "{}x{}".format(self["width"], self["height"]),
-                "-r", str(self["frame_rate"]),
-                "-g", str(self["gop_size"]),
-                "-c:v", self["video_codec"],
-                "-b:v", self["video_bitrate"],
-                "-c:a", self["audio_codec"],
-                "-b:a", self["audio_bitrate"],
             ]
 
-        if self["video_codec"] == "libx264":
-            cmd.extend(["-preset:v", self["video_preset"]])
-            cmd.extend(["-profile:v", self["video_profile"]])
-            cmd.extend(["-x264opts", "keyint=50:min-keyint=50:scenecut=-1".format(self["gop_size"], self["gop_size"])])
+        for output_settings in self["outputs"]:
+            profile = get_profile(**output_settings)
 
-        elif self["video_codec"] == "h264_nvenc":
-            cmd.extend(["-preset:v", self["video_preset"]])
-            cmd.extend(["-strict_gop", "1", "-no-scenecut", "1"])
+            if self.afilters:
+                afilters = self.afilters.render()
+                cmd.extend(["-filter:a", afilters])
 
-        cmd.extend(["-f", self["format"], self.parent.target])
+            if self.vfilters:
+                vfilters = self.vfilters.render()
+                cmd.extend(["-filter:v", vfilters])
+
+            cmd.extend(["-pix_fmt", profile["pixel_format"]])
+            cmd.extend(["-s", "{}x{}".format(profile["width"], profile["height"])])
+            cmd.extend(["-g", str(profile["gop_size"])])
+            cmd.extend(["-c:v", profile["video_codec"]])
+            cmd.extend(["-b:v", profile["video_bitrate"]])
+            cmd.extend(["-c:a", profile["audio_codec"]])
+            cmd.extend(["-b:a", profile["audio_bitrate"]])
+
+            if profile["video_codec"] == "libx264":
+                cmd.extend(["-preset:v", profile["video_preset"]])
+                cmd.extend(["-profile:v", profile["video_profile"]])
+                cmd.extend(["-x264opts", "keyint=50:min-keyint=50:scenecut=-1".format(profile["gop_size"], profile["gop_size"])])
+
+            elif profile["video_codec"] == "h264_nvenc":
+                cmd.extend(["-preset:v", profile["video_preset"]])
+                cmd.extend(["-strict_gop", "1", "-no-scenecut", "1"])
+
+            cmd.extend(["-f", profile["format"], profile["target"]])
 
         self.proc = subprocess.Popen(cmd, stderr=DEVNULL)
 
