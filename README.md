@@ -63,7 +63,8 @@ Do you want more?
 
 Feel free to tweak the sample script to meet your needs.
 You can modify the `get_next` method to play different media in
-different part of the day. You can apply filters
+different part of the day. You can apply audio and video filters both to each
+source clip and output.
 
 ### Still not enough?
 
