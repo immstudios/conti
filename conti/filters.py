@@ -39,6 +39,16 @@ class FilterChain(object):
 #
 #
 
+class FNull(FBaseFilter):
+    arg_names = ["input", "output"]
+    def render(self):
+        return "[{input}]null[{output}]".format(**self)
+
+class FApad(FBaseFilter):
+    arg_names = ["input", "output"]
+    def render(self):
+        return "[{input}]apad[{output}]".format(**self)
+
 
 class FSource(FBaseFilter):
     arg_names = ["path", "output"]
