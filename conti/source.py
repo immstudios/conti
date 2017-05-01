@@ -59,6 +59,7 @@ class ContiSource(object):
             cmd.extend(["-filter:v", vfilters])
 
         cmd.extend([
+                "-shortest",
                 "-pix_fmt", "yuv420p",
                 "-s", "1920x1080",
                 "-r", "25",
@@ -68,4 +69,6 @@ class ContiSource(object):
                 "-f", "avi",
                 "-"
             ])
-        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=DEVNULL)
+        stderr = None if CONTI_DEBUG["source"] else DEVNULL
+        logging.debug("Executing", " ".join(cmd))
+        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr)
