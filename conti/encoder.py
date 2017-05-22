@@ -74,5 +74,6 @@ class ContiEncoder(object):
 
             cmd.extend(["-f", profile["format"], profile["target"]])
 
-        self.proc = subprocess.Popen(cmd, stderr=DEVNULL)
+        stderr = None if CONTI_DEBUG["encoder"] else DEVNULL
+        self.proc = subprocess.Popen(cmd, stderr=stderr)
 
