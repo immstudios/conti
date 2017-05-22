@@ -35,7 +35,6 @@ if os.path.exists(settings_file):
     else:
         settings.update(custom_settings)
 
-
 #
 # Clips library and "playlist" engine
 #
@@ -95,7 +94,7 @@ if __name__ == "__main__":
             FDrawText("out", "out",
                 text="'%{localtime\:%T}'",
                 fontsize=48,
-                fontcolor="white",
+                fontcolor="#e0e0e0",
                 x="(w/2) - (tw/2)",
                 y="h - (2*lh)",
                 box=1,

@@ -16,8 +16,8 @@ class Conti(object):
         self.settings = get_settings(**kwargs)
 
         self.playlist = []
-        self.playlist_lenght = 3
-        self.buff_size = 4092*1024
+        self.playlist_lenght = 4
+        self.buff_size = 1024*1024
 
         self.encoder = ContiEncoder(self)
 
@@ -31,6 +31,7 @@ class Conti(object):
 
     def fill_playlist(self):
         while len(self.playlist) < self.playlist_lenght:
+            logging.debug("Fill playlist!")
             next_item = self.get_next_item()
             next_item.open()
             if next_item:
@@ -66,6 +67,4 @@ class Conti(object):
     def monitor_thread(self):
         while True:
             self.fill_playlist()
-            time.sleep(.2)
-
-
+            time.sleep(.1)
