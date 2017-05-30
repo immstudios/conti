@@ -27,7 +27,6 @@ def get_settings(**kwargs):
 def get_profile(**kwargs):
     settings = {
         "target"        : "rtp://224.0.0.1:2000",
-        "f"             : "rtp",
         "width"         : 640,
         "height"        : 360,
 
