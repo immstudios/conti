@@ -72,8 +72,15 @@ class ContiEncoder(object):
                 cmd.extend(["-preset:v", profile["video_preset"]])
                 cmd.extend(["-strict_gop", "1", "-no-scenecut", "1"])
 
+            default_profile = get_profile()
+            for key in profile:
+                if not key in default_profile:
+                    cmd.append("-{}".format(key))
+                    value = profile[key]
+                    if value != None:
+                        cmd.append(str(value))
+
             cmd.extend(["-f", profile["format"], profile["target"]])
 
         stderr = None if CONTI_DEBUG["encoder"] else DEVNULL
         self.proc = subprocess.Popen(cmd, stderr=stderr)
-
