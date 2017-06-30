@@ -1,15 +1,39 @@
 import os
+import time
+import subprocess
+
 from nxtools import *
 
-#TODO: python version agnostic hacks
-import thread
+if PYTHON_VERSION > 3:
+    import _thread as thread
+else:
+    import thread
+
+
+DEVNULL = open(os.devnull, 'w')
 
 CONTI_DEBUG = {
         "source" : False,
         "encoder" : False
     }
 
-DEVNULL = open(os.devnull, 'w')
+#
+# System check
+#
+
+def has_nvidia():
+    try:
+        p = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        return False
+    while p.poll() == None:
+        time.sleep(.1)
+    if p.returncode:
+        return False
+    logging.debug("GPU processing available")
+    return True
+
+HAS_NVIDIA = has_nvidia()
 
 #
 # Default settings
