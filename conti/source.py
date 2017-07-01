@@ -3,23 +3,68 @@ import subprocess
 
 from .common import *
 from .filters import FilterChain
+from .probe import media_probe
 
 class ContiSource(object):
     def __init__(self, path, **kwargs):
         self.path = path
         self.proc = None
         self.base_name = get_base_name(path)
+        self.mark_in = kwargs.get("mark_in", 0)
+        self.mark_out = kwargs.get("mark_out", 0)
+
+        self.meta = {}
+        if "meta" in kwargs:
+            assert type(kwargs["meta"]) == dict
+            self.meta.update(kwargs["meta"])
+
         self.vfilters = FilterChain()
         self.afilters = FilterChain()
 
+    #
+    # Class stuff
+    #
+
     def __repr__(self):
-        return "<Conti source: {}>".format(self.base_name)
+        try:
+            return "<Conti source: {}>".format(self.base_name)
+        except:
+            return super(ContiSource, self).__repr__()
 
     def __del__(self):
         logging.info("Closing {}".format(self))
         if self.is_running:
             logging.info("Killing {}".format(self))
             self.proc.kill()
+
+    #
+    # Metadata helpers
+    #
+
+    def load_meta(self):
+        self.meta = media_probe(self.path)
+        if not self.meta:
+            raise IOError, "Unable to open {}".format(self.path)
+
+    @property
+    def original_duration(self):
+        if not "duration" in self.meta:
+            self.load_meta()
+        return self.meta["duration"]
+
+    @property
+    def duration(self):
+        return (self.mark_out or self.original_duration) - self.mark_in
+
+    @property
+    def video_codec(self):
+        if not "video/codec" in self.meta:
+            self.load_meta()
+        return self.meta["video_codec"]
+
+    #
+    # Process control
+    #
 
     @property
     def is_running(self):
@@ -38,17 +83,20 @@ class ContiSource(object):
         return data
 
 
-    def open(self):
-        #TODO: custom intermediate settings
-        # frame rate, audio channels count, resolution, pixel format...
+    def open(self, parent):
+        conti_settings = parent.settings
+        cmd = ["ffmpeg"]
 
-        #TODO:
-        # Detect source codec and use hardware accelerated decoding if supported
+        if HAS_NVIDIA:
+            pass
+            #TODO:
+            # Detect source codec and use hardware accelerated decoding if supported
+            # if self.video_codec == ""
 
-        cmd = [
-                "ffmpeg",
-                "-i", self.path,
-            ]
+        if self.mark_in:
+            cmd.extend(["-ss", str(self.mark_in)])
+
+        cmd.extend(["-i", self.path])
 
         if self.afilters:
             afilters = self.afilters.render()
@@ -59,11 +107,11 @@ class ContiSource(object):
             cmd.extend(["-filter:v", vfilters])
 
         cmd.extend([
-                "-shortest",
                 "-pix_fmt", "yuv420p",
                 "-s", "1920x1080",
-                "-r", "25",
+                "-r", str(conti_settings["frame_rate"]),
                 "-ar", "48000",
+                "-t", str(self.duration),
                 "-c:v", "rawvideo",
                 "-c:a", "pcm_s16le",
                 "-f", "avi",
