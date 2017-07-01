@@ -33,7 +33,7 @@ class Conti(object):
         while len(self.playlist) < self.playlist_lenght:
             logging.debug("Fill playlist!")
             next_item = self.get_next_item()
-            next_item.open()
+            next_item.open(self)
             if next_item:
                 logging.debug("Appending {} to playlist".format(next_item))
                 self.playlist.append(next_item)
