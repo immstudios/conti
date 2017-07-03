@@ -43,6 +43,10 @@ def get_settings(**kwargs):
     settings = {
         "pipe_path"     : "pipe.nut",   # Use unique path if you run multichannel setup on one machine
         "frame_rate"    : 25,
+        "width"         : 1920,         # Processing format
+        "height"        : 1080,
+        "pixel_format"  : "yuv420p",
+        "audio_sample_rate" : 48000
     }
     settings.update(kwargs)
     return settings
@@ -51,11 +55,11 @@ def get_settings(**kwargs):
 def get_profile(**kwargs):
     settings = {
         "target"        : "rtp://224.0.0.1:2000",
-        "width"         : 640,
-        "height"        : 360,
+        "width"         : 960,
+        "height"        : 540,
 
         "pixel_format"  : "yuv420p",
-        "video_bitrate" : "800k",       # By default, video quality is quite low...
+        "video_bitrate" : "1600k",      # By default, video quality is quite low...
         "video_preset"  : "fast",       # ... because of my aging development machine.
         "video_profile" : "main",
         "video_codec"   : "libx264",    # By default, software encoder is used.
