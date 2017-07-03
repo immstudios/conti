@@ -2,7 +2,7 @@ import sys
 import subprocess
 
 from .common import *
-from .filters import FilterChain
+from .filters import FilterChain, FApad
 from .probe import media_probe
 
 class ContiSource(object):
@@ -98,19 +98,25 @@ class ContiSource(object):
 
         cmd.extend(["-i", self.path])
 
-        if self.afilters:
-            afilters = self.afilters.render()
-            cmd.extend(["-filter:a", afilters])
 
+        # Add audio padding
+        audio_sink = "out" if self.afilters else "in"
+        self.afilters.add(FApad(audio_sink, "out"))
+
+        # Render audio filters
+        afilters = self.afilters.render()
+        cmd.extend(["-filter:a", afilters])
+
+        # Render video filters
         if self.vfilters:
             vfilters = self.vfilters.render()
             cmd.extend(["-filter:v", vfilters])
 
         cmd.extend([
-                "-pix_fmt", "yuv420p",
-                "-s", "1920x1080",
+                "-pix_fmt", conti_settings["pixel_format"],
+                "-s", "{}x{}".format(conti_settings["width"], conti_settings["height"]),
                 "-r", str(conti_settings["frame_rate"]),
-                "-ar", "48000",
+                "-ar", str(conti_settings["audio_sample_rate"]),
                 "-t", str(self.duration),
                 "-c:v", "rawvideo",
                 "-c:a", "pcm_s16le",
