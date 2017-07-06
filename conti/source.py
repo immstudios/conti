@@ -87,11 +87,21 @@ class ContiSource(object):
         conti_settings = parent.settings
         cmd = ["ffmpeg"]
 
+        # Detect source codec and use hardware accelerated decoding if supported
         if HAS_NVIDIA:
-            pass
-            #TODO:
-            # Detect source codec and use hardware accelerated decoding if supported
-            # if self.video_codec == ""
+            if self.video_codec == "h264":
+                cmd.extend(["-c:v", "h264_cuvid"])
+                if conti_settings["gpu_id"] is not None:
+                    cmd.extend(["-gpu", str(self.gpu_id)])
+
+#            if self.deinterlace:
+#                cmd.extend(["-deint", "adaptive"])
+#                if self.drop_second_field:
+#                    cmd.extend(["-drop_second_field", 1])
+#            cmd.extend(["-resize", "{}x{}".format(self.max_width, self.max_height)])
+
+
+
 
         if self.mark_in:
             cmd.extend(["-ss", str(self.mark_in)])
@@ -113,8 +123,8 @@ class ContiSource(object):
             cmd.extend(["-filter:v", vfilters])
 
         cmd.extend([
-                "-pix_fmt", conti_settings["pixel_format"],
                 "-s", "{}x{}".format(conti_settings["width"], conti_settings["height"]),
+                "-pix_fmt", conti_settings["pixel_format"],
                 "-r", str(conti_settings["frame_rate"]),
                 "-ar", str(conti_settings["audio_sample_rate"]),
                 "-t", str(self.duration),
