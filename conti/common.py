@@ -42,6 +42,7 @@ HAS_NVIDIA = has_nvidia()
 def get_settings(**kwargs):
     settings = {
         "pipe_path"     : "pipe.nut",   # Use unique path if you run multichannel setup on one machine
+        "gpu_id"        : None,
         "frame_rate"    : 25,
         "width"         : 1920,         # Processing format
         "height"        : 1080,
