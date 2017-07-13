@@ -7,7 +7,7 @@ from .common import *
 from .encoder import ContiEncoder
 from .source import ContiSource
 
-__all__ = ["Conti", "ContiSource"]
+__all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
 
 
 class Conti(object):
