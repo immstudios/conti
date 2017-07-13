@@ -9,7 +9,7 @@ class FBaseFilter(object):
         self.kwargs = kwargs
 
     def keys(self):
-        return self.args.keys() + ["kwargs"]
+        return list(self.args.keys()) + ["kwargs"]
 
     def __getitem__(self, key):
         if key == "kwargs":
