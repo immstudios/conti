@@ -47,7 +47,8 @@ def get_settings(**kwargs):
         "width"         : 1920,         # Processing format
         "height"        : 1080,
         "pixel_format"  : "yuv420p",
-        "audio_sample_rate" : 48000
+        "audio_sample_rate" : 48000,
+        "use_gpu"       : HAS_NVIDIA
     }
     settings.update(kwargs)
     return settings
