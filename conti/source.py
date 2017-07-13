@@ -12,6 +12,8 @@ class ContiSource(object):
         self.base_name = get_base_name(path)
         self.mark_in = kwargs.get("mark_in", 0)
         self.mark_out = kwargs.get("mark_out", 0)
+        self.position = 0.0
+        self.stderr = None
 
         self.meta = {}
         if "meta" in kwargs:
@@ -44,7 +46,7 @@ class ContiSource(object):
     def load_meta(self):
         self.meta = media_probe(self.path)
         if not self.meta:
-            raise IOError, "Unable to open {}".format(self.path)
+            raise IOError("Unable to open {}".format(self.path))
 
     @property
     def original_duration(self):
@@ -60,7 +62,7 @@ class ContiSource(object):
     def video_codec(self):
         if not "video/codec" in self.meta:
             self.load_meta()
-        return self.meta["video_codec"]
+        return self.meta["video/codec"]
 
     #
     # Process control
@@ -88,7 +90,8 @@ class ContiSource(object):
         cmd = ["ffmpeg"]
 
         # Detect source codec and use hardware accelerated decoding if supported
-        if HAS_NVIDIA:
+        if conti_settings["use_gpu"]:
+            logging.debug("Using GPU decoding")
             if self.video_codec == "h264":
                 cmd.extend(["-c:v", "h264_cuvid"])
                 if conti_settings["gpu_id"] is not None:
@@ -133,6 +136,6 @@ class ContiSource(object):
                 "-f", "avi",
                 "-"
             ])
-        stderr = None if CONTI_DEBUG["source"] else DEVNULL
+        self.stderr = None if CONTI_DEBUG["source"] else subprocess.PIPE
         logging.debug("Executing", " ".join(cmd))
-        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=stderr)
+        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=self.stderr)
