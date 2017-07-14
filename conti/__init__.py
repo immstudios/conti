@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import subprocess
@@ -20,6 +21,12 @@ class Conti(object):
         self.buff_size = 1024*1024
 
         self.encoder = ContiEncoder(self)
+
+    @property
+    def current(self):
+        if not self.playlist:
+            return False
+        return self.playlist[0]
 
     @property
     def vfilters(self):
@@ -47,6 +54,7 @@ class Conti(object):
     def start(self):
         self.encoder.start()
         thread.start_new_thread(self.monitor_thread, ())
+        thread.start_new_thread(self.progress_thread, ())
         while not self.playlist:
             time.sleep(.1)
         self.main_thread()
@@ -60,14 +68,47 @@ class Conti(object):
         while True:
             logging.info("Starting clip {}".format(self.playlist[0]))
             while True:
-                data = self.playlist[0].read(self.buff_size)
+                data = self.current.read(self.buff_size)
                 if not data:
                     break
                 self.encoder.write(data)
             self.playlist.pop(0)
 
-
     def monitor_thread(self):
         while True:
             self.fill_playlist()
             time.sleep(.1)
+
+    def progress_thread(self):
+        buff = ""
+        while True:
+            if not self.playlist:
+                time.sleep(.01)
+                continue
+
+            source = self.current
+            if not (source or source.stderr):
+                time.sleep(.01)
+                continue
+
+            try:
+                ch = decode_if_py3(source.proc.stderr.read(1))
+            except Exception:
+                log_traceback()
+                continue
+
+            if ch in ["\n", "\r"]:
+                if buff.startswith("frame="):
+                    m = re.match(r".*frame=\s*(\d+)\s*fps.*", buff)
+                    if m:
+                        current_frame = int(m.group(1))
+                        source.position = current_frame / source.meta["video/fps_f"]
+                        self.progress_handler()
+                buff = ""
+            else:
+                buff += ch
+
+
+    def progress_handler(self):
+        return
+        print (self.current.base_name, self.current.position)
