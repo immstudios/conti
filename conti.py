@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import json
@@ -7,10 +7,15 @@ import json
 # Used for nxtools installation.
 
 import rex
+
 from nxtools import *
 
-from conti import Conti, ContiSource
+from conti import *
 from conti.filters import *
+
+
+CONTI_DEBUG["decoder"] = False
+CONTI_DEBUG["encoder"] = False
 
 #
 # Default settings
@@ -52,27 +57,27 @@ class Clips(object):
     """
 
     def __init__(self, data_dir):
-        self.clips = [f for f in get_files(data_dir, exts=["mov"])]
+        self.clips = [f.path for f in get_files(data_dir, exts=["mov"])]
         self.current_index = 0
 
     def get_next(self):
         path = self.clips[self.current_index % len(self.clips)]
         self.current_index += 1
-        source =  ContiSource(path)
+        source = ContiSource(path)
 
         # Warning: Filters engine is subject of change
         source.vfilters.add(
-                    FDrawText("in", "out",
-                        text=get_base_name(path),
-                        fontsize=48,
-                        fontcolor="white",
-                        x="(w/2) - (tw/2)",
-                        y="2*lh",
-                        box=1,
-                        boxborderw=8,
-                        boxcolor="black"
-                    )
+                FDrawText("in", "out",
+                    text=get_base_name(path),
+                    fontsize=48,
+                    fontcolor="white",
+                    x="(w/2) - (tw/2)",
+                    y="2*lh",
+                    box=1,
+                    boxborderw=8,
+                    boxcolor="black"
                 )
+            )
         return source
 
 
@@ -88,19 +93,4 @@ if __name__ == "__main__":
                 FSource(logo_path, "watermark"),
                 FOverlay("in", "watermark", "out"),
             )
-
-    # real-time clock
-    conti.vfilters.add(
-            FDrawText("out", "out",
-                text="'%{localtime\:%T}'",
-                fontsize=48,
-                fontcolor="#e0e0e0",
-                x="(w/2) - (tw/2)",
-                y="h - (2*lh)",
-                box=1,
-                boxborderw=20,
-                boxcolor="black"
-            )
-        )
-
     conti.start()
