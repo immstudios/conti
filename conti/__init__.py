@@ -17,8 +17,8 @@ class Conti(object):
         self.settings = get_settings(**kwargs)
 
         self.playlist = []
-        self.playlist_lenght = 4
-        self.buff_size = 1024*1024
+        self.playlist_lenght = 3
+        self.buff_size = 4*1024*1024
 
         self.encoder = ContiEncoder(self)
 
@@ -56,8 +56,14 @@ class Conti(object):
         thread.start_new_thread(self.monitor_thread, ())
         thread.start_new_thread(self.progress_thread, ())
         while not self.playlist:
+            logging.debug("Playlist is not ready")
             time.sleep(.1)
-        self.main_thread()
+        if self.settings.get("blocking", True):
+            logging.debug("Starting main thread in blocking mode")
+            self.main_thread()
+        else:
+            logging.debug("Starting main thread in non-blocking mode")
+            thread.start_new_thread(self.main_thread, ())
 
 
     def stop(self):
