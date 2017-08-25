@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import subprocess
+import signal
 
 from .common import *
 from .encoder import ContiEncoder
@@ -65,6 +66,17 @@ class Conti(object):
             logging.debug("Starting main thread in non-blocking mode")
             thread.start_new_thread(self.main_thread, ())
 
+    def abort(self):
+        """Finish current item and skip to next one"""
+        if not self.playlist:
+            return False
+        current = self.current
+        if not (current and current.proc):
+            return False
+        pid = current.proc.pid
+        os.kill(pid, signal.SIGINT)
+        return True
+
 
     def stop(self):
         logging.warning("You should never stop your broadcasting :)")
@@ -93,7 +105,7 @@ class Conti(object):
                 continue
 
             source = self.current
-            if not (source or source.stderr):
+            if not (source and source.stderr):
                 time.sleep(.01)
                 continue
 
