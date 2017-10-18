@@ -104,13 +104,9 @@ class ContiSource(object):
 #            cmd.extend(["-resize", "{}x{}".format(self.max_width, self.max_height)])
 
 
-
-
         if self.mark_in:
             cmd.extend(["-ss", str(self.mark_in)])
-
         cmd.extend(["-i", self.path])
-
 
         # Add audio padding
         audio_sink = "out" if self.afilters else "in"
@@ -138,4 +134,10 @@ class ContiSource(object):
             ])
         self.stderr = None if CONTI_DEBUG["source"] else subprocess.PIPE
         logging.debug("Executing", " ".join(cmd))
-        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=self.stderr)
+        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=self.stderr, stdin=subprocess.PIPE)
+
+
+    def send_command(self, cmd):
+        if not self.proc:
+            return
+        self.proc.stdin.write("C{}\n".format(cmd))
