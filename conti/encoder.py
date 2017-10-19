@@ -72,6 +72,7 @@ class ContiEncoder(object):
 
                 if profile["width"] != self.parent.settings["width"] or profile["height"] != self.parent.settings["height"]:
                     cmd.extend(["-s", "{}x{}".format(profile["width"], profile["height"])])
+                cmd.extend(["-pix_fmt", profile["pixel_format"]])
                 cmd.extend(["-g", str(profile["gop_size"])])
                 cmd.extend(["-c:v", profile["video_codec"]])
                 cmd.extend(["-b:v", profile["video_bitrate"]])
@@ -79,7 +80,7 @@ class ContiEncoder(object):
                 if profile["video_codec"] == "libx264":
                     cmd.extend(["-preset:v", profile["video_preset"]])
                     cmd.extend(["-profile:v", profile["video_profile"]])
-                    cmd.extend(["-x264opts", "keyint={}:min-keyint={}:scenecut=-1".format(profile["gop_size"], profile["gop_size"])])
+                    cmd.extend(["-x264opts", "keyint=50:min-keyint=50:scenecut=-1".format(profile["gop_size"], profile["gop_size"])])
 
                 elif profile["video_codec"] == "h264_nvenc":
                     cmd.extend(["-preset:v", profile["video_preset"]])

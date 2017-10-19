@@ -102,7 +102,6 @@ class ContiSource(object):
             cmd.extend(["-ss", str(self.mark_in)])
         cmd.extend(["-i", self.path])
 
-        # Add audio padding//
         audio_sink = "out" if self.afilters else "in"
         self.afilters.add(FApad(audio_sink, "out"))
 
