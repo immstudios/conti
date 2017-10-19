@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import subprocess
+import signal
 
 from .common import *
 from .encoder import ContiEncoder
@@ -15,10 +16,10 @@ class Conti(object):
     def __init__(self, get_next_item, **kwargs):
         self.get_next_item = get_next_item
         self.settings = get_settings(**kwargs)
-
+        self.should_run = True
         self.playlist = []
-        self.playlist_lenght = 3
-        self.buff_size = 4*1024*1024
+        self.playlist_lenght = 2
+        self.buff_size = 65536 # linux pipe buffer size
 
         self.encoder = ContiEncoder(self)
 
@@ -50,7 +51,6 @@ class Conti(object):
                 continue
             logging.error("Unable to get next item")
 
-
     def start(self):
         self.encoder.start()
         thread.start_new_thread(self.monitor_thread, ())
@@ -65,15 +65,28 @@ class Conti(object):
             logging.debug("Starting main thread in non-blocking mode")
             thread.start_new_thread(self.main_thread, ())
 
-
     def stop(self):
-        logging.warning("You should never stop your broadcasting :)")
+        logging.warning("You should never stop your channel :)")
+        self.should_run = False
+        self.encoder.stop()
+        self.abort()
 
+    def abort(self):
+        """Finish current item and skip to next one"""
+        if not self.playlist:
+            logging.error("Unable to abort current clip. Playlist is empty.")
+            return False
+        current = self.current
+        if not current:
+            logging.error("Unable to abort. No clip is playing")
+            return False
+        current.stop()
+        return True
 
     def main_thread(self):
-        while True:
+        while self.should_run:
             logging.info("Starting clip {}".format(self.playlist[0]))
-            while True:
+            while self.should_run:
                 data = self.current.read(self.buff_size)
                 if not data:
                     break
@@ -81,19 +94,19 @@ class Conti(object):
             self.playlist.pop(0)
 
     def monitor_thread(self):
-        while True:
+        while self.should_run:
             self.fill_playlist()
             time.sleep(.1)
 
     def progress_thread(self):
         buff = ""
-        while True:
+        while self.should_run:
             if not self.playlist:
                 time.sleep(.01)
                 continue
 
             source = self.current
-            if not (source or source.stderr):
+            if not (source and source.proc.stderr):
                 time.sleep(.01)
                 continue
 
@@ -101,9 +114,12 @@ class Conti(object):
                 ch = decode_if_py3(source.proc.stderr.read(1))
             except Exception:
                 log_traceback()
+                time.sleep(1)
                 continue
 
             if ch in ["\n", "\r"]:
+                if CONTI_DEBUG["source"]:
+                    print (buff)
                 if buff.startswith("frame="):
                     m = re.match(r".*frame=\s*(\d+)\s*fps.*", buff)
                     if m:
