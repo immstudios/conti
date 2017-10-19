@@ -1,5 +1,6 @@
 import sys
 import subprocess
+import signal
 
 from .common import *
 from .filters import FilterChain, FApad
@@ -13,7 +14,6 @@ class ContiSource(object):
         self.mark_in = kwargs.get("mark_in", 0)
         self.mark_out = kwargs.get("mark_out", 0)
         self.position = 0.0
-        self.stderr = None
 
         self.meta = {}
         if "meta" in kwargs:
@@ -32,12 +32,6 @@ class ContiSource(object):
             return "<Conti source: {}>".format(self.base_name)
         except:
             return super(ContiSource, self).__repr__()
-
-    def __del__(self):
-        logging.info("Closing {}".format(self))
-        if self.is_running:
-            logging.info("Killing {}".format(self))
-            self.proc.kill()
 
     #
     # Metadata helpers
@@ -87,7 +81,7 @@ class ContiSource(object):
 
     def open(self, parent):
         conti_settings = parent.settings
-        cmd = ["ffmpeg"]
+        cmd = ["ffmpeg", "-hide_banner"]
 
         # Detect source codec and use hardware accelerated decoding if supported
         if conti_settings["use_gpu"]:
@@ -104,15 +98,11 @@ class ContiSource(object):
 #            cmd.extend(["-resize", "{}x{}".format(self.max_width, self.max_height)])
 
 
-
-
         if self.mark_in:
             cmd.extend(["-ss", str(self.mark_in)])
-
         cmd.extend(["-i", self.path])
 
-
-        # Add audio padding
+        # Add audio padding//
         audio_sink = "out" if self.afilters else "in"
         self.afilters.add(FApad(audio_sink, "out"))
 
@@ -133,9 +123,25 @@ class ContiSource(object):
                 "-t", str(self.duration),
                 "-c:v", "rawvideo",
                 "-c:a", "pcm_s16le",
+                "-max_interleave_delta", "400000",
                 "-f", "avi",
                 "-"
             ])
-        self.stderr = None if CONTI_DEBUG["source"] else subprocess.PIPE
         logging.debug("Executing", " ".join(cmd))
-        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=self.stderr)
+        self.proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE
+            )
+
+    def stop(self):
+        if not self.proc:
+            return
+        logging.warning("Terminating source process")
+        os.kill(self.proc.pid, signal.SIGTERM)
+
+    def send_command(self, cmd):
+        if not self.proc:
+            return
+        self.proc.stdin.write("C{}\n".format(cmd))
