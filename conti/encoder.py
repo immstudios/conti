@@ -26,7 +26,7 @@ class ContiEncoder(object):
             return
         logging.warning("Terminating encoder process")
         os.kill(self.proc.pid, signal.SIGKILL)
-        time.sleep(.5)
+        self.proc.wait()
 
     @property
     def pipe_path(self):
@@ -41,25 +41,15 @@ class ContiEncoder(object):
         return False
 
     def write(self, data):
-        if not self.pipe:
-            self.pipe = open(self.pipe_path, "wb")
-        try:
-            self.pipe.write(data)
-        except BrokenPipeError:
-            logging.warning("Signal lost")
+        if not self.is_running:
+            return
+        self.proc.stdin.write(data)
 
     def start(self):
-        if os.path.exists(self.pipe_path):
-            os.remove(self.pipe_path)
-        os.mkfifo(self.pipe_path)
-
         cmd = [
                 "ffmpeg",
-                "-hide_banner",
-#               "-loglevel", "debug",
                 "-re",
-                "-i", self.pipe_path,
-                "-fflags", "+nobuffer"
+                "-i", "-",
             ]
 
         for output_settings in self["outputs"]:
@@ -80,7 +70,7 @@ class ContiEncoder(object):
                 if profile["video_codec"] == "libx264":
                     cmd.extend(["-preset:v", profile["video_preset"]])
                     cmd.extend(["-profile:v", profile["video_profile"]])
-                    cmd.extend(["-x264opts", "keyint=50:min-keyint=50:scenecut=-1".format(profile["gop_size"], profile["gop_size"])])
+                    cmd.extend(["-x264opts", "keyint={}:min-keyint={}:scenecut=-1".format(profile["gop_size"], profile["gop_size"])])
 
                 elif profile["video_codec"] == "h264_nvenc":
                     cmd.extend(["-preset:v", profile["video_preset"]])
@@ -106,4 +96,9 @@ class ContiEncoder(object):
 
         stderr = None if CONTI_DEBUG["encoder"] else DEVNULL
         logging.info(" ".join(cmd))
-        self.proc = subprocess.Popen(cmd, stderr=stderr)
+        self.proc = subprocess.Popen(
+                cmd,
+                stderr=stderr,
+                stdin=subprocess.PIPE,
+                stdout=None
+            )

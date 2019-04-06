@@ -139,6 +139,7 @@ class ContiSource(object):
             return
         logging.warning("Terminating source process")
         os.kill(self.proc.pid, signal.SIGTERM)
+        self.proc.wait()
 
     def send_command(self, cmd):
         if not self.proc:
