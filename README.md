@@ -1,36 +1,20 @@
 Conti
 =====
 
-*Broadcast from tin cans*
+*FFMpeg based playout server*
 
 About the project
 -----------------
 
-Conti is probably the simplest linear playout server ever.
-
-It allows you to broadcast your video files with minimal configuration
-and hardware requirements.
-
-### Why the f&^k?
+Conti is a simple linear video playout server. It enables you to broadcast 
+your video files with minimal configuration and hardware requirements.
 
 With a little help of our other tools, Conti can run regional info channels,
 loby TVs, you can use in your hotel, restaurant or just run a pirate-punk-whatever
 channel for fun as [we do](https://nxtv.cz).
 
-After some tweaking it is even possible to switch to live sources (capture card, webcam
+It is also possible to switch to live sources (capture card, webcam
 or another IP video stream).
-
-### Where is GUI?
-
-There is no GUI or automation included. Write your own or use [Nebula](https://nebulabroadcast.com), [Astra](http://www.aveco.com) or whatever.
-
-### Can I see it in action?
-
-Very soon...
-
-### Is it better than X
-
-Probably not yet. If X is not BetaCart, ancient Omneon or something like this...
 
 Quick start
 -----------
@@ -44,7 +28,7 @@ Clone this repository and tweak conti.py script to point to your data location
 (directory with your video files)
 
 By default, Conti streams in RTP over multicast to `rtp://224.0.0.1:2000`,
-but you can change thedestination as well as encoding profile too.
+but you can change the destination as well as the encoding profile(s).
 
 Start `./conti.py` and tune your station:
 Start VLC on any machine in your network, hit ctrl+n and enter `rtp://@224.0.0.1:2000`.
@@ -66,20 +50,6 @@ You can modify the `get_next` method to play different media in
 different part of the day. You can apply audio and video filters both to each
 source clip and output.
 
-### Still not enough?
-
- - Connect [Themis](https://github.com/martastain/themis) library
-   to your workflow to normalize incomming media files to production format
- - Use [Dramatica](https://github.com/martastain/dramatica) to do the scheduling for you
- - Use [NXCG](https://github.com/martastain/nxcg) and Fusion scripts
-   to pre-render infographics.
- - Use imm studios OpenData service to get weather forecast,
-   stock market data, sports results and much more for your channel.
-
-And finally - tie everything together with [Nebula](https://github.com/immstudios/nebula)
-and get fully automated TV station.
-
-
 Limitations
 -----------
 
@@ -87,5 +57,3 @@ Limitations
 
 Real-time graphics will be limited to elements supported by ffmpeg filters.
 You will be able to burn-in station logo, clock and simple news ticker though.
-
-GPU accelerated decoding is not yet implemented.
