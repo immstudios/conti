@@ -41,7 +41,6 @@ HAS_NVIDIA = has_nvidia()
 
 def get_settings(**kwargs):
     settings = {
-        "pipe_path"     : "pipe.nut",   # Use unique path if you run multichannel setup on one machine
         "gpu_id"        : None,
         "frame_rate"    : 25,
         "width"         : 1920,         # Processing format
@@ -57,16 +56,16 @@ def get_settings(**kwargs):
 def get_profile(**kwargs):
     settings = {
         "target"        : "rtp://224.0.0.1:2000",
-        "width"         : 960,
-        "height"        : 540,
+        "width"         : 1920,
+        "height"        : 1080,
 
         "pixel_format"  : "yuv420p",
-        "video_bitrate" : "1600k",      # By default, video quality is quite low...
+        "video_bitrate" : "4000k",      # By default, video quality is quite low...
         "video_preset"  : "fast",       # ... because of my aging development machine.
         "video_profile" : "main",
         "video_codec"   : "libx264",    # By default, software encoder is used.
                                         # You may use h264_nvenc if you have modern nVidia card
-        "gop_size"      : 50,           # Fixed GOP size is usefull for HLS/DASH streaming
+        "gop_size"      : 80,           # Fixed GOP size is usefull for HLS/DASH streaming
         "audio_codec"   : "libfdk_aac", # You probably do not want to change this
         "audio_bitrate" : "128k",
         "format"        : "rtp_mpegts", # Other options: "flv", "mpegts",... check ffmpeg docs
