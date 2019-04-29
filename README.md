@@ -6,7 +6,7 @@ Conti
 About the project
 -----------------
 
-Conti is a simple linear video playout server. It enables you to broadcast 
+Conti is a simple linear video playout server. It enables you to broadcast
 your video files with minimal configuration and hardware requirements.
 
 With a little help of our other tools, Conti can run regional info channels,
@@ -24,6 +24,8 @@ If you are using Debian based distribution, you may use
 install.ffmpeg.sh script from our
 [installers repository](https://github.com/immstudios/installers).
 
+Install [nxtools](https://github.com/immstudios/nxtools) using `pip3 install nxtools`
+
 Clone this repository and tweak conti.py script to point to your data location
 (directory with your video files)
 
@@ -36,11 +38,6 @@ Start VLC on any machine in your network, hit ctrl+n and enter `rtp://@224.0.0.1
 If you wish, you can use RTMP output to stream - for
 example - to YouTube Live or NGINX with RTMP module, create HLS or MPEG DASH segments
 and manifest and run your own web TV.
-
-Additionaly you can use our [Streampunk](https://streampunk.cz) service and
-[WarpPlayer](http://player.warp.rocks).
-[Contact us](mailto:info@nebulabroadcast.com) for more information
-
 
 Do you want more?
 -----------------

@@ -1,3 +1,5 @@
+__all__ = ["ContiEncoder"]
+
 import os
 import time
 import subprocess

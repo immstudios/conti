@@ -1,3 +1,5 @@
+__all__ = ["ContiSource"]
+
 import sys
 import subprocess
 import signal

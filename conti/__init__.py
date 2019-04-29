@@ -1,3 +1,6 @@
+__all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
+
+
 import os
 import re
 import sys
@@ -6,10 +9,8 @@ import subprocess
 import signal
 
 from .common import *
-from .encoder import ContiEncoder
-from .source import ContiSource
-
-__all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
+from .encoder import *
+from .source import *
 
 
 class Conti(object):

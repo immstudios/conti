@@ -3,16 +3,10 @@
 import os
 import json
 
-# REX is an imm studios package manager.
-# Used for nxtools installation.
-
-import rex
-
 from nxtools import *
 
 from conti import *
 from conti.filters import *
-
 
 CONTI_DEBUG["decoder"] = False
 CONTI_DEBUG["encoder"] = False
