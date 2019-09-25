@@ -47,7 +47,16 @@ class FNull(FBaseFilter):
 class FApad(FBaseFilter):
     arg_names = ["input", "output"]
     def render(self):
+        if self.kwargs:
+            return "[{input}]apad={kwargs}[{output}]".format(**self)
         return "[{input}]apad[{output}]".format(**self)
+
+class FAtrim(FBaseFilter):
+    arg_names = ["input", "output"]
+    def render(self):
+        if self.kwargs:
+            return "[{input}]atrim={kwargs}[{output}]".format(**self)
+        return "[{input}]atrim[{output}]".format(**self)
 
 
 class FSource(FBaseFilter):
@@ -65,7 +74,7 @@ class FOverlay(FBaseFilter):
     def render(self):
         result = "[{background}][{foreground}]overlay".format(**self)
         if self.kwargs:
-            resulta += "={kwargs}".format(**self)
+            result += "={kwargs}".format(**self)
         result += "[{output}]".format(**self)
         return result
 

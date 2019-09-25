@@ -80,12 +80,12 @@ def media_probe(source_path):
 
             meta["video/codec"] = stream["codec_name"]
             meta["video/pixel_format"] = stream["pix_fmt"]
-            meta["video/width"] = stream["width"]
-            meta["video/height"] = stream["height"]
-            meta["video/index"] = stream["index"]
+            meta["video/width"] = int(stream["width"])
+            meta["video/height"] = int(stream["height"])
+            meta["video/index"] = int(stream["index"])
             meta["video/color_range"] = stream.get("color_range", "")
             meta["video/color_space"] = stream.get("color_space", "")
-            meta["video/nb_frames"] = stream.get("nb_frames", 0)
+            meta["video/nb_frames"] = int(stream.get("nb_frames", 0))
 
         elif stream["codec_type"] == "audio":
             meta["audio_tracks"].append(AudioTrack(**stream))
@@ -94,7 +94,7 @@ def media_probe(source_path):
             except Exception:
                 pass
 
-    if meta.get("vide/nb_frames", False):
+    if meta.get("video/nb_frames", False):
         meta["duration"] = meta["video/nb_frames"] / meta["video/fps_f"]
     else:
         meta["duration"] = float(format_info["duration"]) or source_vdur or source_adur

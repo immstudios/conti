@@ -5,7 +5,7 @@ import subprocess
 import signal
 
 from .common import *
-from .filters import FilterChain, FApad
+from .filters import FilterChain, FApad, FAtrim
 from .probe import media_probe
 
 class ContiSource(object):
@@ -105,7 +105,8 @@ class ContiSource(object):
         cmd.extend(["-i", self.path])
 
         audio_sink = "out" if self.afilters else "in"
-        self.afilters.add(FApad(audio_sink, "out"))
+        self.afilters.add(FApad(audio_sink, "out", whole_dur=self.duration ))
+        self.afilters.add(FAtrim("out", "out", duration=self.duration ))
 
         # Render audio filters
         afilters = self.afilters.render()
