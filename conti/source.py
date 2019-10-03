@@ -123,6 +123,7 @@ class ContiSource(object):
                 "-r", str(conti_settings["frame_rate"]),
                 "-ar", str(conti_settings["audio_sample_rate"]),
                 "-t", str(self.duration),
+                "-field_order", "tt",
                 "-c:v", "rawvideo",
                 "-c:a", "pcm_s16le",
                 "-max_interleave_delta", "400000",
