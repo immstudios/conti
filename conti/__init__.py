@@ -100,7 +100,7 @@ class Conti(object):
             time.sleep(.1)
 
     def progress_thread(self):
-        buff = ""
+        buff = b""
         while self.should_run:
             if not self.playlist:
                 time.sleep(.01)
@@ -112,22 +112,23 @@ class Conti(object):
                 continue
 
             try:
-                ch = decode_if_py3(source.proc.stderr.read(1))
+                ch = source.proc.stderr.read(1)
             except Exception:
                 log_traceback()
                 time.sleep(1)
                 continue
 
-            if ch in ["\n", "\r"]:
+            if ch in ["\n", "\r", b"\n", b"\r"]:
+                line = decode_if_py3(buff)
                 if CONTI_DEBUG["source"]:
-                    print (buff)
-                if buff.startswith("frame="):
-                    m = re.match(r".*frame=\s*(\d+)\s*fps.*", buff)
+                    print (line)
+                if line.startswith("frame="):
+                    m = re.match(r".*frame=\s*(\d+)\s*fps.*", line)
                     if m:
                         current_frame = int(m.group(1))
                         source.position = current_frame / source.meta["video/fps_f"]
                         self.progress_handler()
-                buff = ""
+                buff = b""
             else:
                 buff += ch
 
