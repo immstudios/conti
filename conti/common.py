@@ -56,11 +56,11 @@ def get_settings(**kwargs):
 
 def get_profile(**kwargs):
     settings = {
+        "format"        : "rtp_mpegts",
         "target"        : "rtp://224.0.0.1:2000",
-        "width"         : 1920,
-        "height"        : 1080,
+        "field_order"   : False,
 
-        "pixel_format"  : "yuv420p",
+
         "video_bitrate" : "4000k",      # By default, video quality is quite low...
         "video_preset"  : "fast",       # ... because of my aging development machine.
         "video_profile" : "main",
@@ -69,7 +69,6 @@ def get_profile(**kwargs):
         "gop_size"      : 80,           # Fixed GOP size is usefull for HLS/DASH streaming
         "audio_codec"   : "libfdk_aac", # You probably do not want to change this
         "audio_bitrate" : "128k",
-        "format"        : "rtp_mpegts", # Other options: "flv", "mpegts",... check ffmpeg docs
     }
     settings.update(kwargs)
     return settings

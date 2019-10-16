@@ -39,6 +39,11 @@ class FilterChain(object):
 #
 #
 
+class RawFilter(FBaseFilter):
+    arg_names = ["string"]
+    def render(self):
+        return self["string"]
+
 class FNull(FBaseFilter):
     arg_names = ["input", "output"]
     def render(self):
@@ -84,3 +89,16 @@ class FDrawText(FBaseFilter):
         result = "[{input}]drawtext={kwargs}[{output}]".format(**self)
         return result
 
+class FSetField(FBaseFilter):
+    arg_names = ["input", "output", "order"]
+    def render(self):
+        result = "[{input}]setfielded={order}[{output}]".format(**self)
+        return result
+
+class FSplit(FBaseFilter):
+    arg_names = ["input", "outputs"]
+    def render(self):
+        result = "[{}]".format(self["input"])
+        result+= "split={}".format(len(self["outputs"]))
+        result+= "".join(["[{}]".format(o) for o in self["outputs"]])
+        return result
