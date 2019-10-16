@@ -43,6 +43,7 @@ def get_settings(**kwargs):
     settings = {
         "gpu_id"        : None,
         "frame_rate"    : 25,
+        "playlist_length" : 2,
         "width"         : 1920,         # Processing format
         "height"        : 1080,
         "pixel_format"  : "yuv420p",

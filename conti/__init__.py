@@ -19,7 +19,7 @@ class Conti(object):
         self.settings = get_settings(**kwargs)
         self.should_run = True
         self.playlist = []
-        self.playlist_lenght = 2
+        self.playlist_lenght = self.settings["playlist_length"]
         self.buff_size = 65536 # linux pipe buffer size
 
         self.encoder = ContiEncoder(self)
