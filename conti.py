@@ -9,15 +9,16 @@ from conti import *
 from conti.filters import *
 
 CONTI_DEBUG["decoder"] = False
-CONTI_DEBUG["encoder"] = False
+CONTI_DEBUG["encoder"] = True
 
 #
 # Default settings
 #
 
 settings = {
+    "media_dir" : "data/",
     "outputs" : [ {
-        "target" : "rtp://224.0.0.1:2000&pkt_size=1316"
+        "target" : "rtp://224.0.0.1:2000&pkt_size=1316",
     }]
 }
 
@@ -33,6 +34,7 @@ if os.path.exists(settings_file):
         log_traceback()
     else:
         settings.update(custom_settings)
+
 
 #
 # Clips library and "playlist" engine
@@ -77,7 +79,7 @@ class Clips(object):
 
 
 if __name__ == "__main__":
-    clips = Clips("data/")
+    clips = Clips(settings["media_dir"])
     conti = Conti(clips.get_next, **settings)
 
     # station logo burn-in

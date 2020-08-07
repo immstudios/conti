@@ -5,11 +5,12 @@ import subprocess
 import signal
 
 from .common import *
-from .filters import FilterChain, FApad, FAtrim
+from .filters import *
 from .probe import media_probe
 
 class ContiSource(object):
-    def __init__(self, path, **kwargs):
+    def __init__(self, parent, path, **kwargs):
+        self.parent = parent
         self.path = path
         self.proc = None
         self.base_name = get_base_name(path)
@@ -22,8 +23,33 @@ class ContiSource(object):
             assert type(kwargs["meta"]) == dict
             self.meta.update(kwargs["meta"])
 
-        self.vfilters = FilterChain()
-        self.afilters = FilterChain()
+        self.filter_chain = FilterChain()
+
+
+        tracks = {k["index"] : k["channels"] for k in self.audio_tracks}
+
+        if tracks:
+            amerge = ""
+            num_channels = 0
+            for idx in tracks:
+                amerge+="[0:{}]".format(idx)
+                num_channels += tracks[idx]
+            if len(tracks) == 1:
+                amerge = "[0:{}]".format(idx)
+            else:
+                amerge+="amerge=inputs={},".format(len(tracks))
+
+            amerge+= "pan=hexadecagonal|{}[audio]".format(
+                "|".join([ "c{}=c{}".format(idx,idx) for idx in range(num_channels)])
+                )
+        else:
+            amerge="anullsrc=channel_layout=hexadecagonal:sample_rate=48000[audio]"
+
+        self.filter_chain.add(RawFilter(amerge))
+
+
+
+
 
     #
     # Class stuff
@@ -51,6 +77,12 @@ class ContiSource(object):
         return self.meta["duration"]
 
     @property
+    def audio_tracks(self):
+        if not "audio_tracks" in self.meta:
+            self.load_meta()
+        return self.meta.get("audio_tracks", [])
+
+    @property
     def duration(self):
         return (self.mark_out or self.original_duration) - self.mark_in
 
@@ -72,6 +104,11 @@ class ContiSource(object):
             return True
         return False
 
+    @property
+    def read_error(self):
+        self.proc.wait()
+        print(self.proc.stderr.read())
+
     def read(self, *args, **kwargs):
         if not self.proc:
             self.open()
@@ -81,54 +118,42 @@ class ContiSource(object):
         return data
 
 
-    def open(self, parent):
-        conti_settings = parent.settings
+    def open(self):
+        conti_settings = self.parent.settings
         cmd = ["ffmpeg", "-hide_banner"]
-
-        # Detect source codec and use hardware accelerated decoding if supported
-        if conti_settings["use_gpu"]:
-            logging.debug("Using GPU decoding")
-            if self.video_codec == "h264":
-                cmd.extend(["-c:v", "h264_cuvid"])
-                if conti_settings["gpu_id"] is not None:
-                    cmd.extend(["-gpu", str(self.gpu_id)])
-
-#            if self.deinterlace:
-#                cmd.extend(["-deint", "adaptive"])
-#                if self.drop_second_field:
-#                    cmd.extend(["-drop_second_field", 1])
-#            cmd.extend(["-resize", "{}x{}".format(self.max_width, self.max_height)])
 
 
         if self.mark_in:
             cmd.extend(["-ss", str(self.mark_in)])
         cmd.extend(["-i", self.path])
 
-        audio_sink = "out" if self.afilters else "in"
-        self.afilters.add(FApad(audio_sink, "out", whole_dur=self.duration ))
-        self.afilters.add(FAtrim("out", "out", duration=self.duration ))
+        self.filter_chain.add(FApad("audio", "audio", whole_dur=self.duration ))
+        self.filter_chain.add(FAtrim("audio", "audio", duration=self.duration ))
 
-        # Render audio filters
-        afilters = self.afilters.render()
-        cmd.extend(["-filter:a", afilters])
+        cmd.extend(["-filter_complex", self.filter_chain.render()])
 
-        # Render video filters
-        if self.vfilters:
-            vfilters = self.vfilters.render()
-            cmd.extend(["-filter:v", vfilters])
 
-        cmd.extend([
+        if not conti_settings["audio_only"]:
+            cmd.extend([
+                "-map", "0:0", #TODO: video filterchain output
+                "-c:v", "rawvideo",
                 "-s", "{}x{}".format(conti_settings["width"], conti_settings["height"]),
                 "-pix_fmt", conti_settings["pixel_format"],
                 "-r", str(conti_settings["frame_rate"]),
-                "-ar", str(conti_settings["audio_sample_rate"]),
+            ])
+        else:
+            cmd.append("-vn")
+
+        cmd.extend([
                 "-t", str(self.duration),
-                "-c:v", "rawvideo",
-                "-c:a", "pcm_s16le",
+                "-map", "[audio]",
+                "-c:a", conti_settings["audio_codec"],
+                "-ar", str(conti_settings["audio_sample_rate"]),
                 "-max_interleave_delta", "400000",
                 "-f", "avi",
                 "-"
             ])
+
         logging.debug("Executing", " ".join(cmd))
         self.proc = subprocess.Popen(
                 cmd,
