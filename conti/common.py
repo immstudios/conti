@@ -32,7 +32,6 @@ def get_settings(**kwargs):
         "audio_only"      : False,
         "audio_codec"     : "pcm_s16le",
         "audio_sample_rate" : 48000,
-        "audio_channels"    : 16
     }
 
     settings.update(kwargs)

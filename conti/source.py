@@ -17,14 +17,15 @@ class ContiSource(object):
         self.mark_in = kwargs.get("mark_in", 0)
         self.mark_out = kwargs.get("mark_out", 0)
         self.position = 0.0
+        self.error_log = []
 
         self.meta = {}
+        self.probed = False
         if "meta" in kwargs:
             assert type(kwargs["meta"]) == dict
             self.meta.update(kwargs["meta"])
 
         self.filter_chain = FilterChain()
-
 
         tracks = {k["index"] : k["channels"] for k in self.audio_tracks}
 
@@ -47,7 +48,14 @@ class ContiSource(object):
 
         self.filter_chain.add(RawFilter(amerge))
 
-
+        if not self.parent.settings["audio_only"]:
+            if self.video_index > -1: 
+                self.filter_chain.add(FNull("0:{}".format(self.video_index), "video"))
+            else:
+                self.filter_chain.add(RawFilter("color=c=black:s={}x{}".format(
+                   self.parent.settings["width"],
+                   self.parent.settings["height"]
+                )))
 
 
 
@@ -69,6 +77,7 @@ class ContiSource(object):
         self.meta = media_probe(self.path)
         if not self.meta:
             raise IOError("Unable to open {}".format(self.path))
+        self.probed = True
 
     @property
     def original_duration(self):
@@ -78,7 +87,7 @@ class ContiSource(object):
 
     @property
     def audio_tracks(self):
-        if not "audio_tracks" in self.meta:
+        if not ("audio_tracks" in self.meta and self.probed):
             self.load_meta()
         return self.meta.get("audio_tracks", [])
 
@@ -88,9 +97,15 @@ class ContiSource(object):
 
     @property
     def video_codec(self):
-        if not "video/codec" in self.meta:
+        if not ("video/codec" in self.meta and self.probed):
             self.load_meta()
         return self.meta["video/codec"]
+
+    @property
+    def video_index(self):
+        if not ("video/index" in self.meta and self.probed):
+            self.load_meta()
+        return self.meta.get("video/index", -1)
 
     #
     # Process control
@@ -103,11 +118,6 @@ class ContiSource(object):
         if self.proc.poll() == None:
             return True
         return False
-
-    @property
-    def read_error(self):
-        self.proc.wait()
-        print(self.proc.stderr.read())
 
     def read(self, *args, **kwargs):
         if not self.proc:
@@ -122,7 +132,6 @@ class ContiSource(object):
         conti_settings = self.parent.settings
         cmd = ["ffmpeg", "-hide_banner"]
 
-
         if self.mark_in:
             cmd.extend(["-ss", str(self.mark_in)])
         cmd.extend(["-i", self.path])
@@ -130,12 +139,15 @@ class ContiSource(object):
         self.filter_chain.add(FApad("audio", "audio", whole_dur=self.duration ))
         self.filter_chain.add(FAtrim("audio", "audio", duration=self.duration ))
 
-        cmd.extend(["-filter_complex", self.filter_chain.render()])
+        cmd.extend([
+                "-filter_complex", self.filter_chain.render(),
+                "-t", str(self.duration)
+            ])
 
 
         if not conti_settings["audio_only"]:
             cmd.extend([
-                "-map", "0:0", #TODO: video filterchain output
+                "-map", "[video]",
                 "-c:v", "rawvideo",
                 "-s", "{}x{}".format(conti_settings["width"], conti_settings["height"]),
                 "-pix_fmt", conti_settings["pixel_format"],
@@ -145,7 +157,6 @@ class ContiSource(object):
             cmd.append("-vn")
 
         cmd.extend([
-                "-t", str(self.duration),
                 "-map", "[audio]",
                 "-c:a", conti_settings["audio_codec"],
                 "-ar", str(conti_settings["audio_sample_rate"]),
@@ -166,7 +177,7 @@ class ContiSource(object):
         if not self.proc:
             return
         logging.warning("Terminating source process")
-        os.kill(self.proc.pid, signal.SIGTERM)
+        os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
 
     def send_command(self, cmd):

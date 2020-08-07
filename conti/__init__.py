@@ -33,31 +33,28 @@ class Conti(object):
         return self.playlist[0]
 
     @property
-    def vfilters(self):
-        return self.encoder.vfilters
-
-    @property
-    def afilters(self):
-        return self.encoder.afilters
+    def filter_chain(self):
+        return self.encoder.filter_chain
 
     def append_next_item(self):
-        next_item = self.get_next_item()
+        next_item = self.get_next_item(self)
         if not next_item:
             time.sleep(.1)
-            return  
-        next_item.open(self)
+            return
+        next_item.open()
         if next_item:
             logging.debug("Appending {} to playlist".format(next_item))
             self.playlist.append(next_item)
-            return 
+            return
         logging.error("Unable to get next item")
-    
+
 
     def start(self):
         self.started = True
         self.encoder.start()
         thread.start_new_thread(self.monitor_thread, ())
-        thread.start_new_thread(self.progress_thread, ())
+        thread.start_new_thread(self.source_progress_thread, ())
+        thread.start_new_thread(self.encoder_progress_thread, ())
         while not self.playlist:
             logging.debug("Playlist is not ready")
             time.sleep(.1)
@@ -80,8 +77,25 @@ class Conti(object):
                     continue
                 data = self.current.read(self.buff_size)
                 if not data:
+                    self.current.proc.wait()
+                    if self.current.proc.poll() > 0:
+                        print()
+                        logging.error("Source error")
+                        print ("\n".join(self.current.error_log))
+                        print (str(self.current.proc.stderr.read()))
+                        print()
                     break
-                self.encoder.write(data)
+                try:
+                    self.encoder.write(data)
+                except BrokenPipeError:
+                    self.encoder.proc.wait()
+                    print()
+                    logging.error("Encoder error")
+                    print("\n".join(self.encoder.error_log))
+                    print(str(self.encoder.proc.stderr.read()))
+                    print()
+                    self.stop()
+                    #TODO: start encoder again, seek to the same position and resume
             self.playlist.pop(0)
 
     def monitor_thread(self):
@@ -90,9 +104,8 @@ class Conti(object):
                 self.append_next_item()
             time.sleep(.1)
 
-    def progress_thread(self):
+    def source_progress_thread(self):
         sbuff = b""
-        ebuff = b""
         while self.should_run:
             if not self.playlist:
                 time.sleep(.01)
@@ -115,20 +128,39 @@ class Conti(object):
                                 self.progress_handler()
                         elif CONTI_DEBUG["source"]:
                             logging.debug("SOURCE:", line)
+                        else:
+                            source.error_log.append(line)
                         sbuff = b""
                     else:
                         sbuff += ch
 
-            continue # TODO: move to another thread??
-            if self.encoder and self.encoder.proc.stderr: 
+
+    def encoder_progress_thread(self):
+        ebuff = b""
+        while self.should_run:
+            if not self.playlist:
+                time.sleep(.01)
+                continue
+
+            if self.encoder and self.encoder.proc.stderr:
                 try:
                     ch = self.encoder.proc.stderr.read(1)
                 except Exception:
                     log_traceback()
                 else:
-                    if ch in ["\n", "\r", b"\n", b"\r"]:
+                    if ch in [b"\n", b"\r"]:
                         line = decode_if_py3(ebuff)
-                        #TODO: get fps/speed value to track performance
+                        if line.startswith("frame="):
+                            pass
+                            #TODO: get fps/speed value to track performance
+
+                        else:
+                            if CONTI_DEBUG["encoder"]:
+                                logging.debug("ENCODER:", line)
+                            self.encoder.error_log.append(str(line))
+                            if len(self.encoder.error_log) > 100:
+                                self.encoder.error_log = self.encoder.error_log[-100:]
+
                         ebuff = b""
                     else:
                         ebuff += ch
@@ -136,10 +168,9 @@ class Conti(object):
 
     def progress_handler(self):
         return
-        print (self.current.base_name, self.current.position)
 
     def stop(self):
-        logging.warning("You should never stop your channel :)")
+        logging.warning("Stopping playback")
         self.should_run = False
         self.encoder.stop()
         self.take()
@@ -174,4 +205,3 @@ class Conti(object):
         logging.info("Aborting", self.current)
         self.current.stop()
         self.paused = True
-

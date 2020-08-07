@@ -2,6 +2,7 @@
 
 import os
 import json
+import functools
 
 from nxtools import *
 
@@ -18,7 +19,11 @@ CONTI_DEBUG["encoder"] = True
 settings = {
     "media_dir" : "data/",
     "outputs" : [ {
-        "target" : "rtp://224.0.0.1:2000&pkt_size=1316",
+        "target" : "SDL Output",
+        "params" : {
+            "f" : "sdl",
+            "pix_fmt" : "yuv420p"
+        }
     }]
 }
 
@@ -56,14 +61,15 @@ class Clips(object):
         self.clips = [f.path for f in get_files(data_dir, exts=["mov"])]
         self.current_index = 0
 
-    def get_next(self):
+    def get_next(self, conti):
         path = self.clips[self.current_index % len(self.clips)]
         self.current_index += 1
-        source = ContiSource(path)
+        source = ContiSource(conti, path)
+
 
         # Warning: Filters engine is subject of change
-        source.vfilters.add(
-                FDrawText("in", "out",
+        source.filter_chain.add(
+                FDrawText("video", "video",
                     text=get_base_name(path),
                     fontsize=48,
                     fontcolor="white",
@@ -74,9 +80,9 @@ class Clips(object):
                     boxcolor="black"
                 )
             )
+
+
         return source
-
-
 
 if __name__ == "__main__":
     clips = Clips(settings["media_dir"])
@@ -85,8 +91,8 @@ if __name__ == "__main__":
     # station logo burn-in
     logo_path = "data/logo.png"
     if os.path.exists(logo_path):
-        conti.vfilters.add(
+        conti.filter_chain.add(
                 FSource(logo_path, "watermark"),
-                FOverlay("in", "watermark", "out"),
+                FOverlay("video", "watermark", "video"),
             )
     conti.start()

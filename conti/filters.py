@@ -49,6 +49,11 @@ class FNull(FBaseFilter):
     def render(self):
         return "[{input}]null[{output}]".format(**self)
 
+class FANull(FBaseFilter):
+    arg_names = ["input", "output"]
+    def render(self):
+        return "[{input}]anull[{output}]".format(**self)
+
 class FApad(FBaseFilter):
     arg_names = ["input", "output"]
     def render(self):
