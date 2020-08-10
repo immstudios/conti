@@ -21,6 +21,9 @@ class ContiEncoder(object):
     def __getitem__(self, key):
         return self.parent.settings[key]
 
+    def get(self, key, default=None):
+        return self.parent.settings.get(key, default)
+
     def __del__(self):
         self.stop()
 
@@ -61,6 +64,24 @@ class ContiEncoder(object):
         if not "decklink" in [profile.get("params", {"f" : None}) for profile in self["outputs"]]:
            cmd.append("-re")
 
+        # Custom output filterchain
+
+        filters = self.get("audio_filters", []) 
+        if filters:
+            if type(filters) == str:
+                filters = [filters]
+            self.filter_chain.add(RawFilter(
+                "[audio]" + ",".join(filters) + "[audio]"
+                ))
+
+        filters = self.get("video_filters", []) 
+        if filters:
+            if type(filters) == str:
+                filters = [filters]
+            self.filter_chain.add(RawFilter(
+                "[video]" + ",".join(filters) + "[video]"
+                ))
+
         # Split video and audio outputs to match needed count. 
         # If there is no video or audio needed in the output profiles,
         # send output to nullsink or anullsink
@@ -88,6 +109,29 @@ class ContiEncoder(object):
             self.filter_chain.add(RawFilter(asplit))
         else:
             self.filter_chain.add(RawFilter("[audio]anullsink"))
+
+
+        # Per-output stream filterchain
+
+        for i, profile in enumerate(self["outputs"]):
+            vfilters = profile.get("video_filters", [])
+            afilters = profile.get("audio_filters", [])
+            if vfilters:
+                if type(vfilters) == str:
+                    vfilters = [vfilters]
+                self.filter_chain.add(RawFilter(
+                    "[video{}]".format(i) + 
+                    ",".join(vfilters) +
+                    "[video{}]".format(i)
+                    ))
+            if afilters:
+                if type(afilters) == str:
+                    afilters = [afilters]
+                self.filter_chain.add(RawFilter(
+                    "[audio{}]".format(i) + 
+                    ",".join(afilters) +
+                    "[audio{}]".format(i)
+                    ))
 
         # Load AV stream from pipe and attach the finished filterchain
 
