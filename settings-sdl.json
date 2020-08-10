@@ -1,0 +1,26 @@
+{
+    "media_dir" : "/home/martas/Desktop/testclips/",
+    "video_filters" : "hue=s=0",
+    "outputs" : [ 
+    {
+        "target" : "SDL Output",
+        "audio" : false,
+        "params" : {
+            "c:v" : "rawvideo",
+            "f" : "sdl",
+            "pix_fmt" : "yuv420p"
+        }
+    },
+    {
+        "target" : "SDL Output1",
+        "audio" : false,
+        "video_filters": "hflip",
+        "params" : {
+            "c:v" : "rawvideo",
+            "f" : "sdl",
+            "pix_fmt" : "yuv420p"
+        }
+    }
+
+]
+}

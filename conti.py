@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import json
 import functools
 
@@ -17,26 +18,35 @@ CONTI_DEBUG["encoder"] = True
 #
 
 settings = {
-    "media_dir" : "data/",
-    "outputs" : [ {
-        "target" : "SDL Output",
+    "media_dir" : "data",
+    "outputs" : [{
+        "target" : "rtp://224.0.0.1:2000",
+        "audio_filters" : "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
+        "video_filters" : "scale=640x360",
         "params" : {
-            "f" : "sdl",
+            "c:v" : "libx264",
+            "b:v" : "900k",
+            "c:a" : "aac",
+            "b:a" : "96k",
+            "f" : "rtp_mpegts",
             "pix_fmt" : "yuv420p"
         }
     }]
 }
+
+
 
 #
 # Load custom settings from file
 #
 
 settings_file = "settings.json"
-if os.path.exists(settings_file):
+if os.path.exists(settings_file) and not "--default" in sys.argv:
     try:
         custom_settings = json.load(open(settings_file))
     except Exception:
         log_traceback()
+        critical_error("Unable to parse 'settings.json' file")
     else:
         settings.update(custom_settings)
 
@@ -58,7 +68,9 @@ class Clips(object):
     """
 
     def __init__(self, data_dir):
-        self.clips = [f.path for f in get_files(data_dir, exts=["mov"])]
+        self.clips = [f.path for f in get_files(data_dir, exts=["mov", "mxf"])]
+        if not self.clips:
+            critical_error("There are no media files in '{}'".format(data_dir))
         self.current_index = 0
 
     def get_next(self, conti):
