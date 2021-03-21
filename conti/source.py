@@ -1,8 +1,8 @@
 __all__ = ["ContiSource"]
 
 import sys
-import subprocess
 import signal
+import subprocess
 
 from .common import *
 from .filters import *
@@ -49,7 +49,7 @@ class ContiSource(object):
         self.filter_chain.add(RawFilter(amerge))
 
         if not self.parent.settings["audio_only"]:
-            if self.video_index > -1: 
+            if self.video_index > -1:
                 self.filter_chain.add(FNull("0:{}".format(self.video_index), "video"))
             else:
                 self.filter_chain.add(RawFilter("color=c=black:s={}x{}".format(

@@ -7,8 +7,6 @@ from nxtools import *
 if PYTHON_VERSION < 3:
     critical_error("Python 2 is no longer supported")
 
-import _thread as thread
-
 DEVNULL = open(os.devnull, 'w')
 CONTI_DEBUG = {
         "source" : False,

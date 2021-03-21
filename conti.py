@@ -22,7 +22,7 @@ settings = {
     "outputs" : [{
         "target" : "rtp://224.0.0.1:2000",
         "audio_filters" : "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
-        "video_filters" : "scale=640x360",
+        "video_filters" : ["movie=/data/logo.png[logo]; " "scale=640x360"],
         "params" : {
             "c:v" : "libx264",
             "b:v" : "900k",

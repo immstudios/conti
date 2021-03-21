@@ -66,7 +66,7 @@ class ContiEncoder(object):
 
         # Custom output filterchain
 
-        filters = self.get("audio_filters", []) 
+        filters = self.get("audio_filters", [])
         if filters:
             if type(filters) == str:
                 filters = [filters]
@@ -74,7 +74,14 @@ class ContiEncoder(object):
                 "[audio]" + ",".join(filters) + "[audio]"
                 ))
 
-        filters = self.get("video_filters", []) 
+        pre_filters = self.get("pre_filters", [])
+        if pre_filters:
+            if type(pre_filters) == str:
+                pre_filters = [pre_filters]
+            for pf in pre_filters:
+                self.filter_chain.add(RawFilter(pf))
+
+        filters = self.get("video_filters", [])
         if filters:
             if type(filters) == str:
                 filters = [filters]
@@ -82,7 +89,7 @@ class ContiEncoder(object):
                 "[video]" + ",".join(filters) + "[video]"
                 ))
 
-        # Split video and audio outputs to match needed count. 
+        # Split video and audio outputs to match needed count.
         # If there is no video or audio needed in the output profiles,
         # send output to nullsink or anullsink
 
@@ -120,7 +127,7 @@ class ContiEncoder(object):
                 if type(vfilters) == str:
                     vfilters = [vfilters]
                 self.filter_chain.add(RawFilter(
-                    "[video{}]".format(i) + 
+                    "[video{}]".format(i) +
                     ",".join(vfilters) +
                     "[video{}]".format(i)
                     ))
@@ -128,7 +135,7 @@ class ContiEncoder(object):
                 if type(afilters) == str:
                     afilters = [afilters]
                 self.filter_chain.add(RawFilter(
-                    "[audio{}]".format(i) + 
+                    "[audio{}]".format(i) +
                     ",".join(afilters) +
                     "[audio{}]".format(i)
                     ))
@@ -139,7 +146,7 @@ class ContiEncoder(object):
             "-i", "-",
             "-filter_complex", self.filter_chain.render(),
             ])
-        
+
         # Create output profiles
 
         for i, profile in enumerate(self["outputs"]):
@@ -162,7 +169,7 @@ class ContiEncoder(object):
 
         # ... and start the encoder
 
-        logging.info("Starting encoder with the following setup:\n", " ".join(cmd))
+        logging.debug("Starting encoder with the following settings:\n", " ".join(cmd))
         self.proc = subprocess.Popen(
                 cmd,
                 stderr=subprocess.PIPE,

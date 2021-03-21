@@ -5,8 +5,9 @@ import os
 import re
 import sys
 import time
-import subprocess
 import signal
+import subprocess
+import threading
 
 from .common import *
 from .encoder import *
@@ -23,7 +24,6 @@ class Conti(object):
         self.playlist_lenght = self.settings["playlist_length"]
         self.buff_size = 65536 # linux pipe buffer size
         self.paused = False
-
         self.encoder = ContiEncoder(self)
 
     @property
@@ -52,9 +52,15 @@ class Conti(object):
     def start(self):
         self.started = True
         self.encoder.start()
-        thread.start_new_thread(self.monitor_thread, ())
-        thread.start_new_thread(self.source_progress_thread, ())
-        thread.start_new_thread(self.encoder_progress_thread, ())
+
+        monitor_thread          = threading.Thread(target=self.monitor_thread, daemon=True)
+        source_progress_thread  = threading.Thread(target=self.source_progress_thread, daemon=True)
+        encoder_progress_thread = threading.Thread(target=self.encoder_progress_thread, daemon=True)
+
+        monitor_thread.start()
+        source_progress_thread.start()
+        encoder_progress_thread.start()
+
         while not self.playlist:
             logging.debug("Playlist is not ready")
             time.sleep(.1)
@@ -63,7 +69,8 @@ class Conti(object):
             self.main_thread()
         else:
             logging.debug("Starting main thread in non-blocking mode")
-            thread.start_new_thread(self.main_thread, ())
+            main_thread = threading.Thread(target=self.main_thread, daemon=True)
+            main_thread.start()
 
     def main_thread(self):
         while self.should_run:
@@ -88,21 +95,26 @@ class Conti(object):
                 try:
                     self.encoder.write(data)
                 except BrokenPipeError:
-                    self.encoder.proc.wait()
-                    print()
-                    logging.error("Encoder error")
-                    print("\n".join(self.encoder.error_log))
-                    print(str(self.encoder.proc.stderr.read()))
-                    print()
-                    self.stop()
-                    #TODO: start encoder again, seek to the same position and resume
+                    if self.should_run:
+                        self.encoder.proc.wait()
+                        print()
+                        logging.error("Encoder error")
+                        print("\n".join(self.encoder.error_log))
+                        print(str(self.encoder.proc.stderr.read()))
+                        print()
+                        self.stop()
+                        #TODO: start encoder again, seek to the same position and resume
+                    else:
+                        break
             self.playlist.pop(0)
+        logging.debug("Conti main thread terminated")
 
     def monitor_thread(self):
         while self.should_run:
             while len(self.playlist) < self.playlist_lenght:
                 self.append_next_item()
             time.sleep(.1)
+        logging.debug("Conti monitor thread terminated")
 
     def source_progress_thread(self):
         sbuff = b""
@@ -133,6 +145,7 @@ class Conti(object):
                         sbuff = b""
                     else:
                         sbuff += ch
+        logging.debug("Conti source progress thread terminated")
 
 
     def encoder_progress_thread(self):
@@ -164,6 +177,7 @@ class Conti(object):
                         ebuff = b""
                     else:
                         ebuff += ch
+        logging.debug("Conti encoder progress thread terminated")
 
 
     def progress_handler(self):
