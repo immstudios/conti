@@ -131,7 +131,7 @@ class Conti(object):
                     log_traceback()
                 else:
                     if ch in ["\n", "\r", b"\n", b"\r"]:
-                        line = decode_if_py3(sbuff)
+                        line = sbuff.decode("utf-8")
                         if line.startswith("frame="):
                             m = re.match(r".*frame=\s*(\d+)\s*fps.*", line)
                             if m:
@@ -162,7 +162,7 @@ class Conti(object):
                     log_traceback()
                 else:
                     if ch in [b"\n", b"\r"]:
-                        line = decode_if_py3(ebuff)
+                        line = ebuff.decode("utf-8")
                         if line.startswith("frame="):
                             pass
                             #TODO: get fps/speed value to track performance

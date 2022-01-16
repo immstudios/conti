@@ -4,14 +4,11 @@ import subprocess
 
 from nxtools import *
 
-if PYTHON_VERSION < 3:
-    critical_error("Python 2 is no longer supported")
-
 DEVNULL = open(os.devnull, 'w')
 CONTI_DEBUG = {
-        "source" : False,
-        "encoder" : False
-    }
+    "source" : False,
+    "encoder" : False
+}
 
 #
 # Default settings
