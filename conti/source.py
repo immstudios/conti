@@ -1,12 +1,20 @@
 __all__ = ["ContiSource"]
 
-import sys
+import os
 import signal
 import subprocess
 
-from .common import *
-from .filters import *
+from nxtools import get_base_name, logging
+
 from .probe import media_probe
+from .filters import (
+    FilterChain,
+    RawFilter,
+    FNull,
+    FApad,
+    FAtrim
+)
+
 
 class ContiSource(object):
     def __init__(self, parent, path, **kwargs):
@@ -27,37 +35,41 @@ class ContiSource(object):
 
         self.filter_chain = FilterChain()
 
-        tracks = {k["index"] : k["channels"] for k in self.audio_tracks}
+        tracks = {k["index"]: k["channels"] for k in self.audio_tracks}
 
         if tracks:
             amerge = ""
             num_channels = 0
             for idx in tracks:
-                amerge+="[0:{}]".format(idx)
+                amerge += "[0:{}]".format(idx)
                 num_channels += tracks[idx]
             if len(tracks) == 1:
                 amerge = "[0:{}]".format(idx)
             else:
-                amerge+="amerge=inputs={},".format(len(tracks))
+                amerge += "amerge=inputs={},".format(len(tracks))
 
-            amerge+= "pan=hexadecagonal|{}[audio]".format(
-                "|".join([ "c{}=c{}".format(idx,idx) for idx in range(num_channels)])
-                )
+            amerge += "pan=hexadecagonal|{}[audio]".format(
+                "|".join([
+                    "c{}=c{}".format(idx, idx)
+                    for idx in range(num_channels)
+                ])
+            )
         else:
-            amerge="anullsrc=channel_layout=hexadecagonal:sample_rate=48000[audio]"
+            amerge = "anullsrc=channel_layout=hexadecagonal"
+            amerge += ":sample_rate=48000[audio]"
 
         self.filter_chain.add(RawFilter(amerge))
 
         if not self.parent.settings["audio_only"]:
             if self.video_index > -1:
-                self.filter_chain.add(FNull("0:{}".format(self.video_index), "video"))
+                self.filter_chain.add(
+                    FNull("0:{}".format(self.video_index), "video")
+                )
             else:
                 self.filter_chain.add(RawFilter("color=c=black:s={}x{}".format(
                    self.parent.settings["width"],
                    self.parent.settings["height"]
                 )))
-
-
 
     #
     # Class stuff
@@ -66,7 +78,7 @@ class ContiSource(object):
     def __repr__(self):
         try:
             return "<Conti source: {}>".format(self.base_name)
-        except:
+        except Exception:
             return super(ContiSource, self).__repr__()
 
     #
@@ -76,12 +88,12 @@ class ContiSource(object):
     def load_meta(self):
         self.meta = media_probe(self.path)
         if not self.meta:
-            raise IOError("Unable to open {}".format(self.path))
+            raise IOError(f"Unable to open {self.path}")
         self.probed = True
 
     @property
     def original_duration(self):
-        if not "duration" in self.meta:
+        if "duration" not in self.meta:
             self.load_meta()
         return self.meta["duration"]
 
@@ -115,7 +127,7 @@ class ContiSource(object):
     def is_running(self):
         if not self.proc:
             return False
-        if self.proc.poll() == None:
+        if self.proc.poll() is None:
             return True
         return False
 
@@ -127,7 +139,6 @@ class ContiSource(object):
             return None
         return data
 
-
     def open(self):
         conti_settings = self.parent.settings
         cmd = ["ffmpeg", "-hide_banner"]
@@ -136,20 +147,26 @@ class ContiSource(object):
             cmd.extend(["-ss", str(self.mark_in)])
         cmd.extend(["-i", self.path])
 
-        self.filter_chain.add(FApad("audio", "audio", whole_dur=self.duration ))
-        self.filter_chain.add(FAtrim("audio", "audio", duration=self.duration ))
+        self.filter_chain.add(
+            FApad("audio", "audio", whole_dur=self.duration)
+        )
+        self.filter_chain.add(
+            FAtrim("audio", "audio", duration=self.duration)
+        )
 
         cmd.extend([
                 "-filter_complex", self.filter_chain.render(),
                 "-t", str(self.duration)
             ])
 
-
         if not conti_settings["audio_only"]:
             cmd.extend([
                 "-map", "[video]",
                 "-c:v", "rawvideo",
-                "-s", "{}x{}".format(conti_settings["width"], conti_settings["height"]),
+                "-s", "{}x{}".format(
+                    conti_settings["width"],
+                    conti_settings["height"]
+                ),
                 "-pix_fmt", conti_settings["pixel_format"],
                 "-r", str(conti_settings["frame_rate"]),
             ])

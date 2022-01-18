@@ -1,17 +1,13 @@
 __all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
 
-
-import os
 import re
-import sys
 import time
-import signal
-import subprocess
 import threading
 
-from .common import *
-from .encoder import *
-from .source import *
+from nxtools import logging, log_traceback
+from .common import get_settings, CONTI_DEBUG
+from .encoder import ContiEncoder
+from .source import ContiSource
 
 
 class Conti(object):
@@ -22,7 +18,7 @@ class Conti(object):
         self.started = False
         self.playlist = []
         self.playlist_lenght = self.settings["playlist_length"]
-        self.buff_size = 65536 # linux pipe buffer size
+        self.buff_size = 65536  # linux pipe buffer size
         self.paused = False
         self.encoder = ContiEncoder(self)
 
@@ -48,14 +44,22 @@ class Conti(object):
             return
         logging.error("Unable to get next item")
 
-
     def start(self):
         self.started = True
         self.encoder.start()
 
-        monitor_thread          = threading.Thread(target=self.monitor_thread, daemon=True)
-        source_progress_thread  = threading.Thread(target=self.source_progress_thread, daemon=True)
-        encoder_progress_thread = threading.Thread(target=self.encoder_progress_thread, daemon=True)
+        monitor_thread = threading.Thread(
+            target=self.monitor_thread,
+            daemon=True
+        )
+        source_progress_thread = threading.Thread(
+            target=self.source_progress_thread,
+            daemon=True
+        )
+        encoder_progress_thread = threading.Thread(
+            target=self.encoder_progress_thread,
+            daemon=True
+        )
 
         monitor_thread.start()
         source_progress_thread.start()
@@ -69,7 +73,10 @@ class Conti(object):
             self.main_thread()
         else:
             logging.debug("Starting main thread in non-blocking mode")
-            main_thread = threading.Thread(target=self.main_thread, daemon=True)
+            main_thread = threading.Thread(
+                target=self.main_thread,
+                daemon=True
+            )
             main_thread.start()
 
     def main_thread(self):
@@ -88,8 +95,8 @@ class Conti(object):
                     if self.current.proc.poll() > 0:
                         print()
                         logging.error("Source error")
-                        print ("\n".join(self.current.error_log))
-                        print (str(self.current.proc.stderr.read()))
+                        print("\n".join(self.current.error_log))
+                        print(str(self.current.proc.stderr.read()))
                         print()
                     break
                 try:
@@ -103,7 +110,8 @@ class Conti(object):
                         print(str(self.encoder.proc.stderr.read()))
                         print()
                         self.stop()
-                        #TODO: start encoder again, seek to the same position and resume
+                        # TODO: start encoder again, seek to
+                        # the same position and resume
                     else:
                         break
             self.playlist.pop(0)
@@ -136,7 +144,8 @@ class Conti(object):
                             m = re.match(r".*frame=\s*(\d+)\s*fps.*", line)
                             if m:
                                 current_frame = int(m.group(1))
-                                source.position = current_frame / source.meta["video/fps_f"]
+                                source.position = \
+                                    current_frame / source.meta["video/fps_f"]
                                 self.progress_handler()
                         elif CONTI_DEBUG["source"]:
                             logging.debug("SOURCE:", line)
@@ -146,7 +155,6 @@ class Conti(object):
                     else:
                         sbuff += ch
         logging.debug("Conti source progress thread terminated")
-
 
     def encoder_progress_thread(self):
         ebuff = b""
@@ -165,20 +173,20 @@ class Conti(object):
                         line = ebuff.decode("utf-8")
                         if line.startswith("frame="):
                             pass
-                            #TODO: get fps/speed value to track performance
+                            # TODO: get fps/speed value to track performance
 
                         else:
                             if CONTI_DEBUG["encoder"]:
                                 logging.debug("ENCODER:", line)
                             self.encoder.error_log.append(str(line))
                             if len(self.encoder.error_log) > 100:
-                                self.encoder.error_log = self.encoder.error_log[-100:]
+                                self.encoder.error_log = \
+                                    self.encoder.error_log[-100:]
 
                         ebuff = b""
                     else:
                         ebuff += ch
         logging.debug("Conti encoder progress thread terminated")
-
 
     def progress_handler(self):
         return

@@ -1,5 +1,5 @@
-from nxtools import *
-from nxtools.media import *
+from nxtools import tc2s
+from nxtools.media import ffprobe
 
 __all__ = ["AudioTrack", "media_probe"]
 
@@ -11,6 +11,7 @@ COMMON_ASPECT_RATIOS = [
         (2.35, 1)
     ]
 
+
 class AudioTrack(dict):
     def __repr__(self):
         return "Audio track {index} ({channel_layout})".format(**self)
@@ -20,20 +21,23 @@ class AudioTrack(dict):
         return self["index"]
 
 
-def guess_aspect (w, h):
+def guess_aspect(w: int, h: int):
     if 0 in [w, h]:
         return 0
     ratio = float(w) / float(h)
     return "{}/{}".format(
-            *min(COMMON_ASPECT_RATIOS, key=lambda x:abs((float(x[0])/x[1])-ratio))
+            *min(
+                COMMON_ASPECT_RATIOS,
+                key=lambda x: abs((float(x[0])/x[1])-ratio)
+            )
         )
 
 
 def find_start_timecode(probe_result):
     tc_places = [
-            probe_result["format"].get("tags", {}).get("timecode", "00:00:00:00"),
-            probe_result["format"].get("timecode", "00:00:00:00"),
-        ]
+        probe_result["format"].get("tags", {}).get("timecode", "00:00:00:00"),
+        probe_result["format"].get("timecode", "00:00:00:00"),
+    ]
     tc = "00:00:00:00"
     for i, tcp in enumerate(tc_places):
         if tcp != "00:00:00:00":
@@ -42,29 +46,30 @@ def find_start_timecode(probe_result):
     return tc
 
 
-
 def media_probe(source_path):
     probe_result = ffprobe(source_path)
     if not probe_result:
         return {}
 
     format_info = probe_result["format"]
-
-    meta = {"audio_tracks" : []}
-
+    meta = {"audio_tracks": []}
     source_vdur = 0
     source_adur = 0
 
     for stream in probe_result["streams"]:
         if stream["codec_type"] == "video":
             # Frame rate detection
-            fps_n, fps_d = [float(e) for e in stream["r_frame_rate"].split("/")]
+            fps_n, fps_d = [
+                float(e) for e in stream["r_frame_rate"].split("/")
+            ]
             meta["video/fps_f"] = fps_n / fps_d
             meta["video/fps"] = "{}/{}".format(int(fps_n), int(fps_d))
 
             # Aspect ratio detection
             try:
-                dar_n, dar_d = [float(e) for e in stream["display_aspect_ratio"].split(":")]
+                dar_n, dar_d = [
+                    float(e) for e in stream["display_aspect_ratio"].split(":")
+                ]
                 if not (dar_n and dar_d):
                     raise Exception
             except Exception:
@@ -97,9 +102,10 @@ def media_probe(source_path):
     if meta.get("video/nb_frames", False):
         meta["duration"] = meta["video/nb_frames"] / meta["video/fps_f"]
     else:
-        meta["duration"] = float(format_info["duration"]) or source_vdur or source_adur
+        meta["duration"] = float(format_info["duration"]) \
+            or source_vdur or source_adur
 
     tc = find_start_timecode(probe_result)
     if tc != "00:00:00:00":
-        meta["start_timecode"] = tc2s(tc) #TODO: fps
+        meta["start_timecode"] = tc2s(tc)  # TODO: fps
     return meta

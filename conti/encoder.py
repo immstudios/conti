@@ -1,33 +1,51 @@
 __all__ = ["ContiEncoder"]
 
 import os
-import time
-import subprocess
 import signal
+import subprocess
 
-from .common import *
-from .filters import *
+from nxtools import logging
+
+from .filters import (
+    FilterChain,
+    FNull,
+    FANull,
+    RawFilter
+)
+
 
 class ContiEncoder(object):
+    """Conti encoder process."""
     def __init__(self, parent):
+        """ContiEncoder constructor."""
         self.parent = parent
         self.pipe = None
         self.proc = None
         self.error_log = []
         self.filter_chain = FilterChain()
-        self.filter_chain.add(FNull("0:0", "video")) #TODO: Replace with rawfilter doing something based on conti settings(interlacing and stuff)
-        self.filter_chain.add(FANull("0:1", "audio")) #TODO: Replace with rawfilter doing something based on conti settings(loudness and stuff)
 
-    def __getitem__(self, key):
+        # TODO: Replace with rawfilter doing something
+        # based on conti settings(interlacing and stuff)
+        self.filter_chain.add(FNull("0:0", "video"))
+
+        # TODO: Replace with rawfilter doing something
+        # based on conti settings(loudness and stuff)
+        self.filter_chain.add(FANull("0:1", "audio"))
+
+    def __getitem__(self, key: str):
+        """Return Conti settings value."""
         return self.parent.settings[key]
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: str = None):
+        """Return Conti settings value with default."""
         return self.parent.settings.get(key, default)
 
     def __del__(self):
+        """ContiEncoder destructor."""
         self.stop()
 
     def stop(self):
+        """Stop encoder process."""
         if not self.proc:
             logging.warning("Unable to stop encoder. Not running.")
             return
@@ -40,29 +58,37 @@ class ContiEncoder(object):
 
     @property
     def pipe_path(self):
+        """Return pipe path."""
         return self.parent.settings["pipe_path"]
 
     @property
     def is_running(self):
+        """Return True if encoder is running."""
         if not self.proc:
             return False
-        if self.proc.poll() == None:
+        if self.proc.poll() is None:
             return True
         return False
 
     def write(self, data):
+        """Write data to encoder process."""
         if not self.is_running:
             return
         self.proc.stdin.write(data)
 
     def start(self):
+        """Start encoder process."""
         cmd = ["ffmpeg", "-hide_banner"]
 
-        # Most of the output formats needs -re switch to keep the encoding speed at real time.
+        # Most of the output formats needs -re switch to keep
+        # the encoding speed at real time.
         # With decklink, this is not needed nor desireable
 
-        if not "decklink" in [profile.get("params", {"f" : None}) for profile in self["outputs"]]:
-           cmd.append("-re")
+        if "decklink" not in [
+            profile.get("params", {"f": None})
+            for profile in self["outputs"]
+        ]:
+            cmd.append("-re")
 
         # Custom output filterchain
 
@@ -102,21 +128,20 @@ class ContiEncoder(object):
                 aoutputs.append(i)
 
         if voutputs:
-            vsplit="[video]split={}".format(len(voutputs))
+            vsplit = "[video]split={}".format(len(voutputs))
             for voutput in voutputs:
-                vsplit+="[video{}]".format(voutput)
+                vsplit += "[video{}]".format(voutput)
             self.filter_chain.add(RawFilter(vsplit))
         else:
             self.filter_chain.add(RawFilter("[video]nullsink"))
 
         if aoutputs:
-            asplit="[audio]asplit={}".format(len(aoutputs))
+            asplit = "[audio]asplit={}".format(len(aoutputs))
             for aoutput in aoutputs:
-                asplit+="[audio{}]".format(aoutput)
+                asplit += "[audio{}]".format(aoutput)
             self.filter_chain.add(RawFilter(asplit))
         else:
             self.filter_chain.add(RawFilter("[audio]anullsink"))
-
 
         # Per-output stream filterchain
 
@@ -145,7 +170,7 @@ class ContiEncoder(object):
         cmd.extend([
             "-i", "-",
             "-filter_complex", self.filter_chain.render(),
-            ])
+        ])
 
         # Create output profiles
 
@@ -163,13 +188,16 @@ class ContiEncoder(object):
             for key in params:
                 cmd.append("-{}".format(key))
                 value = params[key]
-                if value != None:
+                if value is not None:
                     cmd.append(str(value))
             cmd.append(profile["target"])
 
         # ... and start the encoder
 
-        logging.debug("Starting encoder with the following settings:\n", " ".join(cmd))
+        logging.debug(
+            "Starting encoder with the following settings:\n",
+            " ".join(cmd)
+        )
         self.proc = subprocess.Popen(
                 cmd,
                 stderr=subprocess.PIPE,

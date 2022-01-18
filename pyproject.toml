@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "conti"
+version = "1.0"
+description = "Minimalistic FFMpeg based playout server"
+keywords = ["playout", "broadcast", "streaming", "ffmpeg", "television"]
+repository = "https://github.com/immstudios/conti"
+authors = ["Martin Wacker <martas@imm.cz>"]
+license = "MIT"
+readme = "README.md"
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Topic :: Multimedia :: Video :: Conversion",
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+nxtools = "^1.6.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+test = 'scripts:test'
+docs = 'scripts:docs'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -3,3 +3,4 @@ data/
 vendor/
 setting.json
 settings.json
+output/*

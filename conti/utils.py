@@ -1,7 +1,8 @@
-from nxtools import *
-from nxtools.media import *
+from nxtools import logging
+from nxtools.media import ffprobe
 
 __all__ = ["check_track_durations"]
+
 
 def check_track_durations(source_path):
     data = ffprobe(source_path)
@@ -14,6 +15,5 @@ def check_track_durations(source_path):
 
     res = len(durations) == 1
     if not res:
-        logging.warning("{} tracks duration mismatch: {}".format(source_path, durations))
+        logging.warning(f"{source_path} tracks duration mismatch: {durations}")
     return res
-
