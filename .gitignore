@@ -4,3 +4,4 @@ vendor/
 setting.json
 settings.json
 output/*
+dist
