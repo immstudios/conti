@@ -1,5 +1,5 @@
 {
-    "media_dir" : "/home/martas/Desktop/testclips/",
+    "media_dir" : "data/",
     "video_filters" : "hue=s=0",
     "outputs" : [ 
     {

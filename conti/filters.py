@@ -1,9 +1,10 @@
-class FBaseFilter(object):
-    arg_names = []
+class FBaseFilter:
+    arg_names: list[str] = []
 
     def __init__(self, *args, **kwargs):
-        assert len(args) == len(self.arg_names), \
+        assert len(args) == len(self.arg_names), (
             f"Expected arguments: {', '.join(self.arg_names)}"
+        )
         self.args = {}
         for key, value in zip(self.arg_names, args):
             self.args[key] = value
@@ -16,14 +17,11 @@ class FBaseFilter(object):
         if key == "kwargs":
             if not self.kwargs:
                 return ""
-            return ":".join([
-                    f"{key}={self.kwargs[key]}"
-                    for key in self.kwargs
-                ])
+            return ":".join([f"{key}={self.kwargs[key]}" for key in self.kwargs])
         return self.args[key]
 
 
-class FilterChain(object):
+class FilterChain:
     def __init__(self, *args):
         self.filters = list(args)
 
@@ -34,8 +32,8 @@ class FilterChain(object):
         for f in args:
             self.filters.append(f)
 
-    def render(self):
-        return ";".join([f.render() for f in self.filters])
+    def render(self) -> str:
+        return ";".join(f.render() for f in self.filters)
 
 
 #
@@ -86,7 +84,7 @@ class FSource(FBaseFilter):
     arg_names = ["path", "output"]
 
     def render(self):
-        result = "movie='{path}'".format(**self)
+        result = "movie={path}".format(**self)
         if self.kwargs:
             result += ":{kwargs}".format(**self)
         result += "[{output}]".format(**self)
@@ -116,7 +114,7 @@ class FSetField(FBaseFilter):
     arg_names = ["input", "output", "order"]
 
     def render(self):
-        result = "[{input}]setfielded={order}[{output}]".format(**self)
+        result = "[{input}]setfield={order}[{output}]".format(**self)
         return result
 
 
