@@ -16,5 +16,3 @@ def check_track_durations(source_path: str):
     # if not res:
     #     logger.warning(f"{source_path} tracks duration mismatch: {durations}")
     return res
-
-

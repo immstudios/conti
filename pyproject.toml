@@ -1,6 +1,6 @@
 [project]
 name = "conti"
-version = "1.0.1"
+version = "1.1.0"
 description = "Minimalistic FFMpeg based playout server"
 keywords = ["playout", "broadcast", "streaming", "ffmpeg", "television"]
 repository = "https://github.com/immstudios/conti"

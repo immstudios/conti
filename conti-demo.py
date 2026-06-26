@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import sys
-import json
 
 from conti import Conti, ContiSource
-from conti.filters import FSource, FOverlay, FDrawText
+from conti.filters import FDrawText, FOverlay, FSource
 
 #
 # Default settings
 #
 
 settings = {
-    "media_dir" : "data",
-    "outputs" : [{
-        "target" : "rtp://224.0.0.1:2000",
-        "audio_filters" : "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
-        "params" : {
-            "c:v" : "h264_nvenc",
-            "b:v" : "1200k",
-            "c:a" : "aac",
-            "b:a" : "128k",
-            "f" : "rtp_mpegts",
-            "pix_fmt" : "yuv420p"
+    "media_dir": "data",
+    "outputs": [
+        {
+            "target": "rtp://224.0.0.1:2000",
+            "audio_filters": "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
+            "params": {
+                "c:v": "h264_nvenc",
+                "b:v": "1200k",
+                "c:a": "aac",
+                "b:a": "128k",
+                "f": "rtp_mpegts",
+                "pix_fmt": "yuv420p",
+            },
         }
-    }]
+    ],
 }
-
 
 
 #
@@ -79,19 +80,22 @@ class Clips(object):
 
         # Warning: Filters engine is subject of change
         source.filter_chain.add(
-                FDrawText("video", "video",
-                    text=os.path.basename(path),
-                    fontsize=48,
-                    fontcolor="white",
-                    x="(w/2) - (tw/2)",
-                    y="2*lh",
-                    box=1,
-                    boxborderw=8,
-                    boxcolor="black"
-                )
+            FDrawText(
+                "video",
+                "video",
+                text=os.path.basename(path),
+                fontsize=48,
+                fontcolor="white",
+                x="(w/2) - (tw/2)",
+                y="2*lh",
+                box=1,
+                boxborderw=8,
+                boxcolor="black",
             )
+        )
 
         return source
+
 
 if __name__ == "__main__":
     clips = Clips(settings["media_dir"])
@@ -101,7 +105,7 @@ if __name__ == "__main__":
     logo_path = "data/logo.png"
     if os.path.exists(logo_path):
         conti.filter_chain.add(
-                FSource(logo_path, "watermark"),
-                FOverlay("video", "watermark", "video"),
-            )
+            FSource(logo_path, "watermark"),
+            FOverlay("video", "watermark", "video"),
+        )
     conti.start()

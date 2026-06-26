@@ -1,15 +1,15 @@
 __all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
 
-import re
-import time
-import threading
 import logging
+import re
+import threading
+import time
 from typing import Callable, Protocol
 
-from .common import get_settings, CONTI_DEBUG
+from .common import CONTI_DEBUG, get_settings
 from .encoder import ContiEncoder
-from .source import ContiSource
 from .filters import FilterChain
+from .source import ContiSource
 
 
 class LoggerProtocol(Protocol):

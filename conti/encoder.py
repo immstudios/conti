@@ -3,14 +3,9 @@ __all__ = ["ContiEncoder"]
 import os
 import signal
 import subprocess
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from .filters import (
-    FilterChain,
-    FNull,
-    FANull,
-    RawFilter
-)
+from .filters import FANull, FilterChain, FNull, RawFilter
 
 if TYPE_CHECKING:
     from .conti import Conti, LoggerProtocol
@@ -18,6 +13,7 @@ if TYPE_CHECKING:
 
 class ContiEncoder:
     """Conti encoder process."""
+
     def __init__(self, parent: "Conti") -> None:
         """ContiEncoder constructor."""
         self.parent = parent
@@ -92,25 +88,21 @@ class ContiEncoder:
         # With decklink, this is not needed nor desireable
 
         if "decklink" not in [
-            profile.get("params", {"f": None})
-            for profile in self["outputs"]
+            profile.get("params", {"f": None}) for profile in self["outputs"]
         ]:
             cmd.append("-re")
 
         # Custom output filterchain
-        
+
         filters: str | list[str]
         audio_filters: str | list[str]
         pre_filters: str | list[str]
-
 
         audio_filters = self.get("audio_filters", [])
         if audio_filters:
             if isinstance(audio_filters, str):
                 filters = [audio_filters]
-            self.filter_chain.add(RawFilter(
-                "[audio]" + ",".join(filters) + "[audio]"
-                ))
+            self.filter_chain.add(RawFilter("[audio]" + ",".join(filters) + "[audio]"))
 
         pre_filters = self.get("pre_filters", [])
         if pre_filters:
@@ -123,9 +115,7 @@ class ContiEncoder:
         if filters:
             if isinstance(filters, str):
                 filters = [filters]
-            self.filter_chain.add(RawFilter(
-                "[video]" + ",".join(filters) + "[video]"
-                ))
+            self.filter_chain.add(RawFilter("[video]" + ",".join(filters) + "[video]"))
 
         # Split video and audio outputs to match needed count.
         # If there is no video or audio needed in the output profiles,
@@ -163,31 +153,38 @@ class ContiEncoder:
             if vfilters:
                 if isinstance(vfilters, str):
                     vfilters = [vfilters]
-                self.filter_chain.add(RawFilter(
-                    "[video{}]".format(i) +
-                    ",".join(vfilters) +
-                    "[video{}]".format(i)
-                    ))
+                self.filter_chain.add(
+                    RawFilter(
+                        "[video{}]".format(i)
+                        + ",".join(vfilters)
+                        + "[video{}]".format(i)
+                    )
+                )
             if afilters:
                 if isinstance(afilters, str):
                     afilters = [afilters]
-                self.filter_chain.add(RawFilter(
-                    "[audio{}]".format(i) +
-                    ",".join(afilters) +
-                    "[audio{}]".format(i)
-                    ))
+                self.filter_chain.add(
+                    RawFilter(
+                        "[audio{}]".format(i)
+                        + ",".join(afilters)
+                        + "[audio{}]".format(i)
+                    )
+                )
 
         # Load AV stream from pipe and attach the finished filterchain
 
-        cmd.extend([
-            "-i", "-",
-            "-filter_complex", self.filter_chain.render(),
-        ])
+        cmd.extend(
+            [
+                "-i",
+                "-",
+                "-filter_complex",
+                self.filter_chain.render(),
+            ]
+        )
 
         # Create output profiles
 
         for i, profile in enumerate(self["outputs"]):
-
             if self.parent.settings["audio_only"]:
                 cmd.extend(["-map", "[audio]"])
             else:
@@ -211,12 +208,8 @@ class ContiEncoder:
         print()
 
         self.logger.debug(
-            "Starting encoder with the following settings:\n",
-            " ".join(cmd)
+            "Starting encoder with the following settings:\n", " ".join(cmd)
         )
         self.proc = subprocess.Popen(
-                cmd,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                stdout=None
-            )
+            cmd, stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=None
+        )

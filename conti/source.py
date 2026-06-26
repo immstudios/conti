@@ -6,8 +6,8 @@ import subprocess
 from typing import TYPE_CHECKING, Any
 
 from .common import get_base_name
+from .filters import FApad, FAtrim, FilterChain, FNull, RawFilter
 from .probe import media_probe
-from .filters import FilterChain, RawFilter, FNull, FApad, FAtrim
 
 if TYPE_CHECKING:
     from .conti import Conti, LoggerProtocol

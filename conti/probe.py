@@ -3,7 +3,6 @@ __all__ = ["AudioTrack", "media_probe"]
 from .common import tc2s
 from .ffprobe import ffprobe
 
-
 COMMON_ASPECT_RATIOS = [(1, 1), (4, 3), (16, 9), (2.35, 1)]
 
 

@@ -2,8 +2,9 @@ class FBaseFilter:
     arg_names: list[str] = []
 
     def __init__(self, *args, **kwargs):
-        assert len(args) == len(self.arg_names), \
+        assert len(args) == len(self.arg_names), (
             f"Expected arguments: {', '.join(self.arg_names)}"
+        )
         self.args = {}
         for key, value in zip(self.arg_names, args):
             self.args[key] = value
@@ -16,10 +17,7 @@ class FBaseFilter:
         if key == "kwargs":
             if not self.kwargs:
                 return ""
-            return ":".join([
-                    f"{key}={self.kwargs[key]}"
-                    for key in self.kwargs
-                ])
+            return ":".join([f"{key}={self.kwargs[key]}" for key in self.kwargs])
         return self.args[key]
 
 
