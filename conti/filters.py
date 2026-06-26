@@ -1,5 +1,5 @@
-class FBaseFilter(object):
-    arg_names = []
+class FBaseFilter:
+    arg_names: list[str] = []
 
     def __init__(self, *args, **kwargs):
         assert len(args) == len(self.arg_names), \
@@ -23,7 +23,7 @@ class FBaseFilter(object):
         return self.args[key]
 
 
-class FilterChain(object):
+class FilterChain:
     def __init__(self, *args):
         self.filters = list(args)
 

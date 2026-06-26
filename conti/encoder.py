@@ -4,8 +4,8 @@ import os
 import signal
 import subprocess
 
-from nxtools import logging
 
+from .common import logger
 from .filters import (
     FilterChain,
     FNull,
@@ -36,7 +36,7 @@ class ContiEncoder(object):
         """Return Conti settings value."""
         return self.parent.settings[key]
 
-    def get(self, key: str, default: str = None):
+    def get(self, key: str, default: str | None = None):
         """Return Conti settings value with default."""
         return self.parent.settings.get(key, default)
 
@@ -47,12 +47,12 @@ class ContiEncoder(object):
     def stop(self):
         """Stop encoder process."""
         if not self.proc:
-            logging.warning("Unable to stop encoder. Not running.")
+            logger.warning("Unable to stop encoder. Not running.")
             return
         if self.proc.poll() is not None:
-            logging.warning("Unable to stop encoder. Already stopped")
+            logger.warning("Unable to stop encoder. Already stopped")
             return
-        logging.warning("Terminating encoder process")
+        logger.warning("Terminating encoder process")
         os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
 
@@ -194,7 +194,7 @@ class ContiEncoder(object):
 
         # ... and start the encoder
 
-        logging.debug(
+        logger.debug(
             "Starting encoder with the following settings:\n",
             " ".join(cmd)
         )

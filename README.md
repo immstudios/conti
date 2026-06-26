@@ -41,8 +41,7 @@ come from FFMpeg, notably:
 Quick start
 -----------
 
-Conti runs on Linux (no other OS has been tested) and requires Python3, FFMpeg and
-nxtools.
+Conti runs on Linux (no other OS has been tested) and requires only python and ffmpeg
 
 ### FFMpeg
 
@@ -51,11 +50,6 @@ is sufficient.
 
 In case you need Blackmagic Decklink or NDI I/O, you may use our build script from 
 [this repository](https://github.com/immstudios/installers).
-
-### nxtools
-
-[nxtools](https://github.com/immstudios/nxtools) is a set of Python utilities 
-we use for many tasks. Install it using `pip3 install nxtools`
 
 ### Running Conti
 

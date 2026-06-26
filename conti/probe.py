@@ -1,15 +1,10 @@
-from nxtools import tc2s
-from nxtools.media import ffprobe
-
 __all__ = ["AudioTrack", "media_probe"]
 
+from .common import tc2s
+from .ffprobe import ffprobe
 
-COMMON_ASPECT_RATIOS = [
-        (1, 1),
-        (4, 3),
-        (16, 9),
-        (2.35, 1)
-    ]
+
+COMMON_ASPECT_RATIOS = [(1, 1), (4, 3), (16, 9), (2.35, 1)]
 
 
 class AudioTrack(dict):
@@ -26,11 +21,8 @@ def guess_aspect(w: int, h: int):
         return 0
     ratio = float(w) / float(h)
     return "{}/{}".format(
-            *min(
-                COMMON_ASPECT_RATIOS,
-                key=lambda x: abs((float(x[0])/x[1])-ratio)
-            )
-        )
+        *min(COMMON_ASPECT_RATIOS, key=lambda x: abs((float(x[0]) / x[1]) - ratio))
+    )
 
 
 def find_start_timecode(probe_result):
@@ -59,9 +51,7 @@ def media_probe(source_path):
     for stream in probe_result["streams"]:
         if stream["codec_type"] == "video":
             # Frame rate detection
-            fps_n, fps_d = [
-                float(e) for e in stream["r_frame_rate"].split("/")
-            ]
+            fps_n, fps_d = [float(e) for e in stream["r_frame_rate"].split("/")]
             meta["video/fps_f"] = fps_n / fps_d
             meta["video/fps"] = "{}/{}".format(int(fps_n), int(fps_d))
 
@@ -102,8 +92,7 @@ def media_probe(source_path):
     if meta.get("video/nb_frames", False):
         meta["duration"] = meta["video/nb_frames"] / meta["video/fps_f"]
     else:
-        meta["duration"] = float(format_info["duration"]) \
-            or source_vdur or source_adur
+        meta["duration"] = float(format_info["duration"]) or source_vdur or source_adur
 
     tc = find_start_timecode(probe_result)
     if tc != "00:00:00:00":
