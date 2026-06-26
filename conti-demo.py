@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+from typing import Any
 
 from conti import Conti, ContiSource
 from conti.filters import FDrawText, FOverlay, FSource
@@ -11,7 +12,7 @@ from conti.filters import FDrawText, FOverlay, FSource
 # Default settings
 #
 
-settings = {
+settings: dict[str, Any] = {
     "media_dir": "data",
     "outputs": [
         {
@@ -34,10 +35,11 @@ settings = {
 # Load custom settings from file
 #
 
-settings_file = "settings-rtp.json"
+settings_file = "settings-sdl.json"
 if os.path.exists(settings_file) and "--default" not in sys.argv:
     try:
-        custom_settings = json.load(open(settings_file))
+        with open(settings_file) as settings_handle:
+            custom_settings = json.load(settings_handle)
     except Exception:
         print("Unable to parse 'settings.json' file")
         sys.exit(1)

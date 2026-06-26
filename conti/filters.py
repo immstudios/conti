@@ -33,9 +33,7 @@ class FilterChain:
             self.filters.append(f)
 
     def render(self) -> str:
-        result = ";".join([f.render() for f in self.filters])
-        print("FilterChain.render:", result)
-        return result
+        return ";".join(f.render() for f in self.filters)
 
 
 #
@@ -90,7 +88,6 @@ class FSource(FBaseFilter):
         if self.kwargs:
             result += ":{kwargs}".format(**self)
         result += "[{output}]".format(**self)
-        print("FSource.render:", result)
         return result
 
 
@@ -117,7 +114,7 @@ class FSetField(FBaseFilter):
     arg_names = ["input", "output", "order"]
 
     def render(self):
-        result = "[{input}]setfielded={order}[{output}]".format(**self)
+        result = "[{input}]setfield={order}[{output}]".format(**self)
         return result
 
 

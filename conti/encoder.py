@@ -19,7 +19,7 @@ class ContiEncoder:
         self.parent = parent
         self.pipe = None
         self.proc = None
-        self.error_log = []
+        self.error_log: list[str] = []
         self.filter_chain = FilterChain()
 
         # TODO: Replace with rawfilter doing something
@@ -87,9 +87,10 @@ class ContiEncoder:
         # the encoding speed at real time.
         # With decklink, this is not needed nor desireable
 
-        if "decklink" not in [
-            profile.get("params", {"f": None}) for profile in self["outputs"]
-        ]:
+        if not any(
+            profile.get("params", {}).get("f") == "decklink"
+            for profile in self["outputs"]
+        ):
             cmd.append("-re")
 
         # Custom output filterchain
@@ -101,8 +102,8 @@ class ContiEncoder:
         audio_filters = self.get("audio_filters", [])
         if audio_filters:
             if isinstance(audio_filters, str):
-                filters = [audio_filters]
-            self.filter_chain.add(RawFilter("[audio]" + ",".join(filters) + "[audio]"))
+                audio_filters = [audio_filters]
+            self.filter_chain.add(RawFilter(f"[audio]{','.join(audio_filters)}[audio]"))
 
         pre_filters = self.get("pre_filters", [])
         if pre_filters:
@@ -115,7 +116,7 @@ class ContiEncoder:
         if filters:
             if isinstance(filters, str):
                 filters = [filters]
-            self.filter_chain.add(RawFilter("[video]" + ",".join(filters) + "[video]"))
+            self.filter_chain.add(RawFilter(f"[video]{','.join(filters)}[video]"))
 
         # Split video and audio outputs to match needed count.
         # If there is no video or audio needed in the output profiles,
@@ -154,21 +155,13 @@ class ContiEncoder:
                 if isinstance(vfilters, str):
                     vfilters = [vfilters]
                 self.filter_chain.add(
-                    RawFilter(
-                        "[video{}]".format(i)
-                        + ",".join(vfilters)
-                        + "[video{}]".format(i)
-                    )
+                    RawFilter(f"[video{i}]{','.join(vfilters)}[video{i}]")
                 )
             if afilters:
                 if isinstance(afilters, str):
                     afilters = [afilters]
                 self.filter_chain.add(
-                    RawFilter(
-                        "[audio{}]".format(i)
-                        + ",".join(afilters)
-                        + "[audio{}]".format(i)
-                    )
+                    RawFilter(f"[audio{i}]{','.join(afilters)}[audio{i}]")
                 )
 
         # Load AV stream from pipe and attach the finished filterchain
@@ -195,7 +188,7 @@ class ContiEncoder:
 
             params = profile.get("params", {})
             for key in params:
-                cmd.append("-{}".format(key))
+                cmd.append(f"-{key}")
                 value = params[key]
                 if value is not None:
                     cmd.append(str(value))
@@ -203,12 +196,8 @@ class ContiEncoder:
 
         # ... and start the encoder
         #
-        print()
-        print(cmd)
-        print()
-
         self.logger.debug(
-            "Starting encoder with the following settings:\n", " ".join(cmd)
+            "Starting encoder with the following settings:\n%s", " ".join(cmd)
         )
         self.proc = subprocess.Popen(
             cmd, stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=None

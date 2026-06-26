@@ -116,8 +116,6 @@ output is not used. The second output has its feed horizontally flipped.
 }
 ```
 
- > Note: SDL is not available in the immstudios ffmpeg build (yet)
-
 ### Pipe format
 
 The example assumes 1080p25 is used as an "intermediate" format (the format which goes thru the pipe),

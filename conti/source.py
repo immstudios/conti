@@ -22,7 +22,7 @@ class ContiSource:
         self.mark_in = kwargs.get("mark_in", 0)
         self.mark_out = kwargs.get("mark_out", 0)
         self.position = 0.0
-        self.error_log = []
+        self.error_log: list[str] = []
 
         self.meta = {}
         self.probed = False
@@ -38,15 +38,16 @@ class ContiSource:
             amerge = ""
             num_channels = 0
             for idx in tracks:
-                amerge += "[0:{}]".format(idx)
+                amerge += f"[0:{idx}]"
                 num_channels += tracks[idx]
             if len(tracks) == 1:
-                amerge = "[0:{}]".format(idx)
+                amerge = f"[0:{idx}]"
             else:
-                amerge += "amerge=inputs={},".format(len(tracks))
+                amerge += f"amerge=inputs={len(tracks)},"
 
-            amerge += "pan=hexadecagonal|{}[audio]".format(
-                "|".join(["c{}=c{}".format(idx, idx) for idx in range(num_channels)])
+            amerge += (
+                f"pan=hexadecagonal|"
+                f"{'|'.join([f'c{idx}=c{idx}' for idx in range(num_channels)])}[audio]"
             )
         else:
             amerge = "anullsrc=channel_layout=hexadecagonal"
@@ -56,14 +57,13 @@ class ContiSource:
 
         if not self.parent.settings["audio_only"]:
             if self.video_index > -1:
-                self.filter_chain.add(FNull("0:{}".format(self.video_index), "video"))
+                self.filter_chain.add(FNull(f"0:{self.video_index}", "video"))
             else:
                 self.filter_chain.add(
                     RawFilter(
-                        "color=c=black:s={}x{}".format(
-                            self.parent.settings["width"],
-                            self.parent.settings["height"],
-                        )
+                        "color=c=black:s="
+                        f"{self.parent.settings['width']}x"
+                        f"{self.parent.settings['height']}[video]"
                     )
                 )
 
@@ -73,7 +73,7 @@ class ContiSource:
 
     def __repr__(self):
         try:
-            return "<Conti source: {}>".format(self.base_name)
+            return f"<Conti source: {self.base_name}>"
         except Exception:
             return super(ContiSource, self).__repr__()
 
@@ -162,7 +162,7 @@ class ContiSource:
                     "-c:v",
                     "rawvideo",
                     "-s",
-                    "{}x{}".format(conti_settings["width"], conti_settings["height"]),
+                    f"{conti_settings['width']}x{conti_settings['height']}",
                     "-pix_fmt",
                     conti_settings["pixel_format"],
                     "-r",
@@ -188,7 +188,7 @@ class ContiSource:
             ]
         )
 
-        self.logger.debug("Executing", " ".join(cmd))
+        self.logger.debug("Executing %s", " ".join(cmd))
         self.proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
         )
@@ -203,4 +203,4 @@ class ContiSource:
     def send_command(self, cmd):
         if not self.proc:
             return
-        self.proc.stdin.write("C{}\n".format(cmd))
+        self.proc.stdin.write(f"C{cmd}\n".encode("utf-8"))

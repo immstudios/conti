@@ -20,7 +20,7 @@ class LoggerProtocol(Protocol):
 
 
 class Conti:
-    playlist_lenght: int
+    playlist_length: int
     buff_size: int
     should_run: bool
     started: bool
@@ -41,7 +41,7 @@ class Conti:
         self.should_run = True
         self.started = False
         self.playlist = []
-        self.playlist_lenght = self.settings["playlist_length"]
+        self.playlist_length = self.settings["playlist_length"]
         self.buff_size = 65536  # linux pipe buffer size
         self.paused = False
         self.encoder = ContiEncoder(self)
@@ -63,7 +63,7 @@ class Conti:
             return
         next_item.open()
         if next_item:
-            self.logger.debug("Appending {} to playlist".format(next_item))
+            self.logger.debug(f"Appending {next_item} to playlist")
             self.playlist.append(next_item)
             return
         self.logger.error("Unable to get next item")
@@ -102,7 +102,7 @@ class Conti:
             if not self.playlist:
                 time.sleep(0.01)
                 continue
-            self.logger.info("Starting clip {}".format(self.playlist[0]))
+            self.logger.info(f"Starting clip {self.playlist[0]}")
             while self.should_run:
                 if self.paused:
                     time.sleep(0.01)
@@ -137,7 +137,7 @@ class Conti:
 
     def monitor_thread(self):
         while self.should_run:
-            while len(self.playlist) < self.playlist_lenght:
+            while len(self.playlist) < self.playlist_length:
                 self.append_next_item()
             time.sleep(0.1)
         self.logger.debug("Conti monitor thread terminated")
@@ -167,7 +167,7 @@ class Conti:
                                 )
                                 self.progress_handler()
                         elif CONTI_DEBUG["source"]:
-                            self.logger.debug("SOURCE:", line)
+                            self.logger.debug("SOURCE: %s", line)
                         else:
                             source.error_log.append(line)
                         sbuff = b""
@@ -196,7 +196,7 @@ class Conti:
 
                         else:
                             if CONTI_DEBUG["encoder"]:
-                                self.logger.debug("ENCODER:", line)
+                                self.logger.debug("ENCODER: %s", line)
                             self.encoder.error_log.append(str(line))
                             if len(self.encoder.error_log) > 100:
                                 self.encoder.error_log = self.encoder.error_log[-100:]
@@ -246,7 +246,7 @@ class Conti:
         if not self.current:
             self.logger.error("Unable to abort. No clip is playing")
             return False
-        self.logger.info("Aborting", self.current)
+        self.logger.info(f"Aborting {self.current}")
         self.current.stop()
         self.paused = True
         return True
