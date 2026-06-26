@@ -1,5 +1,7 @@
 __all__ = ["AudioTrack", "media_probe"]
 
+from typing import Any
+
 from .common import tc2s
 from .ffprobe import ffprobe
 
@@ -15,9 +17,9 @@ class AudioTrack(dict):
         return self["index"]
 
 
-def guess_aspect(w: int, h: int):
+def guess_aspect(w: float, h: float) -> str | None:
     if 0 in [w, h]:
-        return 0
+        return None
     ratio = float(w) / float(h)
     return "{}/{}".format(
         *min(COMMON_ASPECT_RATIOS, key=lambda x: abs((float(x[0]) / x[1]) - ratio))
@@ -30,20 +32,20 @@ def find_start_timecode(probe_result):
         probe_result["format"].get("timecode", "00:00:00:00"),
     ]
     tc = "00:00:00:00"
-    for i, tcp in enumerate(tc_places):
+    for tcp in tc_places:
         if tcp != "00:00:00:00":
             tc = tcp
             break
     return tc
 
 
-def media_probe(source_path):
+def media_probe(source_path) -> dict[str, Any]:
     probe_result = ffprobe(source_path)
     if not probe_result:
         return {}
 
     format_info = probe_result["format"]
-    meta = {"audio_tracks": []}
+    meta: dict[str, Any] = {"audio_tracks": []}
     source_vdur = 0
     source_adur = 0
 
@@ -52,7 +54,7 @@ def media_probe(source_path):
             # Frame rate detection
             fps_n, fps_d = [float(e) for e in stream["r_frame_rate"].split("/")]
             meta["video/fps_f"] = fps_n / fps_d
-            meta["video/fps"] = "{}/{}".format(int(fps_n), int(fps_d))
+            meta["video/fps"] = f"{int(fps_n)}/{int(fps_d)}"
 
             # Aspect ratio detection
             try:
@@ -60,7 +62,7 @@ def media_probe(source_path):
                     float(e) for e in stream["display_aspect_ratio"].split(":")
                 ]
                 if not (dar_n and dar_d):
-                    raise Exception
+                    raise ValueError("Invalid DAR values")
             except Exception:
                 dar_n, dar_d = float(stream["width"]), float(stream["height"])
 

@@ -1,15 +1,18 @@
-__all__ = ["Conti", "ContiSource", "CONTI_DEBUG"]
+__all__ = ["CONTI_DEBUG", "Conti", "ContiSource"]
 
 import logging
 import re
 import threading
 import time
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Protocol
 
 from .common import CONTI_DEBUG, get_settings
 from .encoder import ContiEncoder
-from .filters import FilterChain
 from .source import ContiSource
+
+if TYPE_CHECKING:
+    from .filters import FilterChain
 
 
 class LoggerProtocol(Protocol):
@@ -111,22 +114,18 @@ class Conti:
                 if not data:
                     self.current.proc.wait()
                     if self.current.proc.poll() > 0:
-                        print()
                         self.logger.error("Source error")
-                        print("\n".join(self.current.error_log))
-                        print(str(self.current.proc.stderr.read()))
-                        print()
+                        self.logger.error("\n".join(self.current.error_log))
+                        self.logger.error(str(self.current.proc.stderr.read()))
                     break
                 try:
                     self.encoder.write(data)
                 except BrokenPipeError:
                     if self.should_run:
                         self.encoder.proc.wait()
-                        print()
                         self.logger.error("Encoder error")
-                        print("\n".join(self.encoder.error_log))
-                        print(str(self.encoder.proc.stderr.read()))
-                        print()
+                        self.logger.error("\n".join(self.encoder.error_log))
+                        self.logger.error(str(self.encoder.proc.stderr.read()))
                         self.stop()
                         # TODO: start encoder again, seek to
                         # the same position and resume

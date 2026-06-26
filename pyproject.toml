@@ -4,9 +4,13 @@ version = "1.1.0"
 description = "Minimalistic FFMpeg based playout server"
 keywords = ["playout", "broadcast", "streaming", "ffmpeg", "television"]
 repository = "https://github.com/immstudios/conti"
-authors = ["Martin Wacker <martas@imm.cz>"]
+authors = [
+  {name = "Martin Wacker", email = "martas@imm.cz"},
+]
 license = "MIT"
 readme = "README.md"
+requires-python = ">=3.11"
+
 classifiers=[
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -23,3 +27,57 @@ dev = [
     "mypy>=1.14.1",
     "ruff>=0.9.4",
 ]
+
+[tool.ruff]
+fix = true
+line-length = 88
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+ignore = [
+  "BLE",     # FIXME: blind exceptions. I don't like them either, but they are useful in some cases
+  "COM812",  # OK: messes with formatter
+  "D",       # FIXME: docstrings. Naaah.
+  "EM",      # OK: String literals in exception messages (why not?)
+  "FBT",     # Boolean positional argument (WTF?)
+  "FIX002",  # FIXME: TODOs
+  "ISC001",  # OK: Incompatible with formatting
+  "PLR2004", # OK: Magic numbers (just a few)
+  "PTH",     # FIXME: path-like objects
+  "S101",    # OK: I like asserts. They make mypy happy
+  "S104",    # OK: bind to all interfaces (We need this)
+  "S110",    # OK: except: pass 
+  "S608",    # FIXME: sql injections. let's wait for template strings
+  "SIM105",  # OK: contextlib.suppress is ugly
+  "TD002",   # Author name in TODOs
+  "TD003",   # Issue link in TODOs
+  "TRY003",  # OK: Avoid specicying long messages outside of exceptions
+  "ANN",     # FIXME: Any
+  "ERA",     # Commented out code
+  "G004",
+  "TRY301",
+  "TRY400", 
+  "RUF012",
+  "PLR0912",
+  "PLR0915",
+  "S603",
+  "C901",
+]
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+exclude = "tests/|venv/|server/|api/"
+explicit_package_bases = true
+follow_imports = "silent"
+no_implicit_reexport = true
+strict = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true

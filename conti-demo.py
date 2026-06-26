@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 
 import json
+import logging
 import os
 import sys
 from typing import Any
 
 from conti import Conti, ContiSource
 from conti.filters import FDrawText, FOverlay, FSource
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 #
 # Default settings
@@ -41,7 +48,7 @@ if os.path.exists(settings_file) and "--default" not in sys.argv:
         with open(settings_file) as settings_handle:
             custom_settings = json.load(settings_handle)
     except Exception:
-        print("Unable to parse 'settings.json' file")
+        logger.exception("Unable to parse 'settings.json' file")
         sys.exit(1)
     else:
         settings.update(custom_settings)
@@ -52,7 +59,7 @@ if os.path.exists(settings_file) and "--default" not in sys.argv:
 #
 
 
-class Clips(object):
+class Clips:
     """
     This helper class collects clips from your data directory
     and provides get_next method. This method returns a ContiSource
@@ -71,7 +78,7 @@ class Clips(object):
                     self.clips.append(os.path.join(root, file))
 
         if not self.clips:
-            print("There are no media files in '{data_dir}'")
+            logger.error("There are no media files in '{data_dir}'")
             sys.exit(1)
         self.current_index = 0
 
@@ -101,7 +108,7 @@ class Clips(object):
 
 if __name__ == "__main__":
     clips = Clips(settings["media_dir"])
-    conti = Conti(clips.get_next, **settings)
+    conti = Conti(clips.get_next, logger=logger, **settings)
 
     # station logo burn-in
     logo_path = "data/logo.png"

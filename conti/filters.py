@@ -6,12 +6,12 @@ class FBaseFilter:
             f"Expected arguments: {', '.join(self.arg_names)}"
         )
         self.args = {}
-        for key, value in zip(self.arg_names, args):
+        for key, value in zip(self.arg_names, args, strict=False):
             self.args[key] = value
         self.kwargs = kwargs
 
     def keys(self):
-        return list(self.args.keys()) + ["kwargs"]
+        return [*list(self.args.keys()), "kwargs"]
 
     def __getitem__(self, key):
         if key == "kwargs":
@@ -106,16 +106,14 @@ class FDrawText(FBaseFilter):
     arg_names = ["input", "output"]
 
     def render(self):
-        result = "[{input}]drawtext={kwargs}[{output}]".format(**self)
-        return result
+        return "[{input}]drawtext={kwargs}[{output}]".format(**self)
 
 
 class FSetField(FBaseFilter):
     arg_names = ["input", "output", "order"]
 
     def render(self):
-        result = "[{input}]setfield={order}[{output}]".format(**self)
-        return result
+        return "[{input}]setfield={order}[{output}]".format(**self)
 
 
 class FSplit(FBaseFilter):
@@ -124,5 +122,5 @@ class FSplit(FBaseFilter):
     def render(self):
         result = "[{}]".format(self["input"])
         result += "split={}".format(len(self["outputs"]))
-        result += "".join(["[{}]".format(o) for o in self["outputs"]])
+        result += "".join([f"[{o}]" for o in self["outputs"]])
         return result

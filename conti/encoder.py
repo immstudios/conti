@@ -69,9 +69,7 @@ class ContiEncoder:
         """Return True if encoder is running."""
         if not self.proc:
             return False
-        if self.proc.poll() is None:
-            return True
-        return False
+        return self.proc.poll() is None
 
     def write(self, data):
         """Write data to encoder process."""
@@ -131,17 +129,17 @@ class ContiEncoder:
                 aoutputs.append(i)
 
         if voutputs:
-            vsplit = "[video]split={}".format(len(voutputs))
+            vsplit = f"[video]split={len(voutputs)}"
             for voutput in voutputs:
-                vsplit += "[video{}]".format(voutput)
+                vsplit += f"[video{voutput}]"
             self.filter_chain.add(RawFilter(vsplit))
         else:
             self.filter_chain.add(RawFilter("[video]nullsink"))
 
         if aoutputs:
-            asplit = "[audio]asplit={}".format(len(aoutputs))
+            asplit = f"[audio]asplit={len(aoutputs)}"
             for aoutput in aoutputs:
-                asplit += "[audio{}]".format(aoutput)
+                asplit += f"[audio{aoutput}]"
             self.filter_chain.add(RawFilter(asplit))
         else:
             self.filter_chain.add(RawFilter("[audio]anullsink"))
@@ -182,9 +180,9 @@ class ContiEncoder:
                 cmd.extend(["-map", "[audio]"])
             else:
                 if profile.get("video", True):
-                    cmd.extend(["-map", "[video{}]".format(i)])
+                    cmd.extend(["-map", f"[video{i}]"])
                 if profile.get("audio", True):
-                    cmd.extend(["-map", "[audio{}]".format(i)])
+                    cmd.extend(["-map", f"[audio{i}]"])
 
             params = profile.get("params", {})
             for key in params:

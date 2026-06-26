@@ -1,6 +1,5 @@
 import os
 
-DEVNULL = open(os.devnull, "w")
 CONTI_DEBUG = {"source": False, "encoder": False}
 
 

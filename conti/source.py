@@ -37,9 +37,9 @@ class ContiSource:
         if tracks:
             amerge = ""
             num_channels = 0
-            for idx in tracks:
+            for idx, track in tracks.items():
                 amerge += f"[0:{idx}]"
-                num_channels += tracks[idx]
+                num_channels += track
             if len(tracks) == 1:
                 amerge = f"[0:{idx}]"
             else:
@@ -75,7 +75,7 @@ class ContiSource:
         try:
             return f"<Conti source: {self.base_name}>"
         except Exception:
-            return super(ContiSource, self).__repr__()
+            return super().__repr__()
 
     @property
     def logger(self) -> "LoggerProtocol":
@@ -88,7 +88,7 @@ class ContiSource:
     def load_meta(self):
         self.meta = media_probe(self.path)
         if not self.meta:
-            raise IOError(f"Unable to open {self.path}")
+            raise OSError(f"Unable to open {self.path}")
         self.probed = True
 
     @property
@@ -127,9 +127,7 @@ class ContiSource:
     def is_running(self):
         if not self.proc:
             return False
-        if self.proc.poll() is None:
-            return True
-        return False
+        return self.proc.poll() is None
 
     def read(self, *args, **kwargs):
         if not self.proc:
@@ -203,4 +201,4 @@ class ContiSource:
     def send_command(self, cmd):
         if not self.proc:
             return
-        self.proc.stdin.write(f"C{cmd}\n".encode("utf-8"))
+        self.proc.stdin.write(f"C{cmd}\n".encode())
