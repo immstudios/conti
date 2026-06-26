@@ -1,13 +1,24 @@
 import os
+from typing import TypedDict
 
-CONTI_DEBUG = {"source": False, "encoder": False}
+
+class ContiSettings(TypedDict):
+    playlist_length: int
+    allow_freeze: bool
+    width: int
+    height: int
+    frame_rate: int
+    pixel_format: str
+    audio_only: bool
+    audio_codec: str
+    audio_sample_rate: int
 
 
-def get_settings(**kwargs):
+def get_settings(**kwargs) -> ContiSettings:
     """Return a dict with the settings for the conti module."""
-    settings = {
-        "gpu_id": None,
+    settings: ContiSettings = {
         "playlist_length": 2,
+        "allow_freeze": False,
         # Processing format
         "width": 1920,
         "height": 1080,
@@ -18,7 +29,7 @@ def get_settings(**kwargs):
         "audio_sample_rate": 48000,
     }
 
-    settings.update(kwargs)
+    settings.update(kwargs)  # type: ignore[arg-type]
     return settings
 
 

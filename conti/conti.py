@@ -1,4 +1,4 @@
-__all__ = ["CONTI_DEBUG", "Conti", "ContiSource"]
+__all__ = ["Conti", "ContiSource"]
 
 import logging
 import re
@@ -7,7 +7,7 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Protocol
 
-from .common import CONTI_DEBUG, get_settings
+from .common import ContiSettings, get_settings
 from .encoder import ContiEncoder
 from .source import ContiSource
 
@@ -23,6 +23,7 @@ class LoggerProtocol(Protocol):
 
 
 class Conti:
+    settings: ContiSettings
     playlist_length: int
     buff_size: int
     should_run: bool
@@ -126,7 +127,7 @@ class Conti:
                 data = self.current.read(self.buff_size)
                 if not data:
                     self.current.proc.wait()
-                    if self.current.proc.poll():
+                    if self.current.proc.poll() and not self.current.stopped:
                         self.logger.error("Source error")
                         self.logger.error("\n".join(self.current.error_log))
                         self.logger.error(str(self.current.proc.stderr.read()))
@@ -179,8 +180,6 @@ class Conti:
                                     current_frame / source.meta["video/fps_f"]
                                 )
                                 self.progress_handler()
-                        elif CONTI_DEBUG["source"]:
-                            self.logger.debug("SOURCE: %s", line)
                         else:
                             source.error_log.append(line)
                         sbuff = b""
@@ -208,8 +207,6 @@ class Conti:
                             # TODO: get fps/speed value to track performance
 
                         else:
-                            if CONTI_DEBUG["encoder"]:
-                                self.logger.debug("ENCODER: %s", line)
                             self.encoder.error_log.append(str(line))
                             if len(self.encoder.error_log) > 100:
                                 self.encoder.error_log = self.encoder.error_log[-100:]
@@ -219,14 +216,15 @@ class Conti:
                         ebuff += ch
         self.logger.debug("Conti encoder progress thread terminated")
 
-    def progress_handler(self):
+    def progress_handler(self) -> None:
         return
 
     def stop(self) -> None:
         self.logger.warning("Stopping playback")
         self.should_run = False
         self.encoder.stop()
-        self.take()
+        for source in self.playlist:
+            source.stop(force=True)
 
     #
     # Playback interaction
@@ -248,6 +246,9 @@ class Conti:
     # TODO: disallow this by checking output formats
 
     def freeze(self) -> bool:
+        if not self.settings.get("allow_freeze"):
+            self.logger.error("Freeze is not allowed by settings")
+            return False
         self.paused = not self.paused
         return self.paused
 
@@ -256,6 +257,8 @@ class Conti:
         return False
 
     def abort(self) -> bool:
+        self.logger.error("Abort is not implemented")
+        return False
         if not self.current:
             self.logger.error("Unable to abort. No clip is playing")
             return False

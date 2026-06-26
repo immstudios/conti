@@ -26,6 +26,8 @@ class ContiSource:
 
         self.meta = {}
         self.probed = False
+        self.stopped = False
+
         if "meta" in kwargs:
             assert isinstance(kwargs["meta"], dict)
             self.meta.update(kwargs["meta"])
@@ -190,15 +192,23 @@ class ContiSource:
 
         self.logger.debug(f"Executing {' '.join(cmd)}")
         self.proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
         )
 
-    def stop(self) -> None:
+    def stop(self, *, force: bool = False) -> None:
         if not self.proc:
             return
         self.logger.debug(f"Terminating {self}")
-        os.kill(self.proc.pid, signal.SIGKILL)
+        try:
+            os.kill(self.proc.pid, signal.SIGKILL if force else signal.SIGINT)
+        except Exception:
+            self.logger.error(f"Unable to terminate {self}")
+        self.stopped = True
         self.proc.wait()
+        self.logger.debug(f"Terminated {self}")
 
     def send_command(self, cmd: str) -> None:
         if not self.proc:

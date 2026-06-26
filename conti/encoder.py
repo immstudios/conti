@@ -58,11 +58,7 @@ class ContiEncoder:
         self.logger.warning("Terminating encoder process")
         os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
-
-    @property
-    def pipe_path(self):
-        """Return pipe path."""
-        return self.parent.settings["pipe_path"]
+        self.logger.debug("Encoder process terminated")
 
     @property
     def is_running(self):
