@@ -193,6 +193,10 @@ class ContiEncoder(object):
             cmd.append(profile["target"])
 
         # ... and start the encoder
+        #
+        print()
+        print(cmd)
+        print()
 
         logger.debug(
             "Starting encoder with the following settings:\n",

@@ -34,8 +34,10 @@ class FilterChain:
         for f in args:
             self.filters.append(f)
 
-    def render(self):
-        return ";".join([f.render() for f in self.filters])
+    def render(self) -> str:
+        result = ";".join([f.render() for f in self.filters])
+        print("FilterChain.render:", result)
+        return result
 
 
 #
@@ -86,10 +88,11 @@ class FSource(FBaseFilter):
     arg_names = ["path", "output"]
 
     def render(self):
-        result = "movie='{path}'".format(**self)
+        result = "movie={path}".format(**self)
         if self.kwargs:
             result += ":{kwargs}".format(**self)
         result += "[{output}]".format(**self)
+        print("FSource.render:", result)
         return result
 
 

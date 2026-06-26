@@ -3,15 +3,9 @@
 import os
 import sys
 import json
-import functools
 
-from nxtools import *
-
-from conti import *
-from conti.filters import *
-
-CONTI_DEBUG["decoder"] = False
-CONTI_DEBUG["encoder"] = True
+from conti import Conti, ContiSource
+from conti.filters import FSource, FOverlay, FDrawText
 
 #
 # Default settings
@@ -22,7 +16,7 @@ settings = {
     "outputs" : [{
         "target" : "rtp://224.0.0.1:2000",
         "audio_filters" : "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
-        "video_filters" : ["movie=/data/logo.png[logo]; " "scale=640x360"],
+        "video_filters" : ["scale=640x360"],
         "params" : {
             "c:v" : "libx264",
             "b:v" : "900k",
@@ -40,13 +34,13 @@ settings = {
 # Load custom settings from file
 #
 
-settings_file = "settings.json"
-if os.path.exists(settings_file) and not "--default" in sys.argv:
+settings_file = "settings-sdl.json"
+if os.path.exists(settings_file) and "--default" not in sys.argv:
     try:
         custom_settings = json.load(open(settings_file))
     except Exception:
-        log_traceback()
-        critical_error("Unable to parse 'settings.json' file")
+        print("Unable to parse 'settings.json' file")
+        sys.exit(1)
     else:
         settings.update(custom_settings)
 
@@ -68,9 +62,15 @@ class Clips(object):
     """
 
     def __init__(self, data_dir):
-        self.clips = [f.path for f in get_files(data_dir, exts=["mov", "mxf"])]
+        self.clips = []
+        for root, _, files in os.walk(data_dir):
+            for file in files:
+                if file.lower().endswith((".mov", ".mxf")):
+                    self.clips.append(os.path.join(root, file))
+
         if not self.clips:
-            critical_error("There are no media files in '{}'".format(data_dir))
+            print("There are no media files in '{data_dir}'")
+            sys.exit(1)
         self.current_index = 0
 
     def get_next(self, conti):
@@ -82,7 +82,7 @@ class Clips(object):
         # Warning: Filters engine is subject of change
         source.filter_chain.add(
                 FDrawText("video", "video",
-                    text=get_base_name(path),
+                    text=os.path.basename(path),
                     fontsize=48,
                     fontcolor="white",
                     x="(w/2) - (tw/2)",
@@ -101,10 +101,10 @@ if __name__ == "__main__":
     conti = Conti(clips.get_next, **settings)
 
     # station logo burn-in
-    logo_path = "data/logo.png"
-    if os.path.exists(logo_path):
-        conti.filter_chain.add(
-                FSource(logo_path, "watermark"),
-                FOverlay("video", "watermark", "video"),
-            )
+    # logo_path = "data/logo.png"
+    # if os.path.exists(logo_path):
+    #     conti.filter_chain.add(
+    #             FSource(logo_path, "watermark"),
+    #             FOverlay("video", "watermark", "video"),
+    #         )
     conti.start()
