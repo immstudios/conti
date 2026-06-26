@@ -16,12 +16,11 @@ settings = {
     "outputs" : [{
         "target" : "rtp://224.0.0.1:2000",
         "audio_filters" : "pan=stereo|c0=c0|c1=c1, loudnorm=I=-23",
-        "video_filters" : ["scale=640x360"],
         "params" : {
-            "c:v" : "libx264",
-            "b:v" : "900k",
+            "c:v" : "h264_nvenc",
+            "b:v" : "1200k",
             "c:a" : "aac",
-            "b:a" : "96k",
+            "b:a" : "128k",
             "f" : "rtp_mpegts",
             "pix_fmt" : "yuv420p"
         }
@@ -34,7 +33,7 @@ settings = {
 # Load custom settings from file
 #
 
-settings_file = "settings-sdl.json"
+settings_file = "settings-rtp.json"
 if os.path.exists(settings_file) and "--default" not in sys.argv:
     try:
         custom_settings = json.load(open(settings_file))
@@ -78,7 +77,6 @@ class Clips(object):
         self.current_index += 1
         source = ContiSource(conti, path)
 
-
         # Warning: Filters engine is subject of change
         source.filter_chain.add(
                 FDrawText("video", "video",
@@ -93,7 +91,6 @@ class Clips(object):
                 )
             )
 
-
         return source
 
 if __name__ == "__main__":
@@ -101,10 +98,10 @@ if __name__ == "__main__":
     conti = Conti(clips.get_next, **settings)
 
     # station logo burn-in
-    # logo_path = "data/logo.png"
-    # if os.path.exists(logo_path):
-    #     conti.filter_chain.add(
-    #             FSource(logo_path, "watermark"),
-    #             FOverlay("video", "watermark", "video"),
-    #         )
+    logo_path = "data/logo.png"
+    if os.path.exists(logo_path):
+        conti.filter_chain.add(
+                FSource(logo_path, "watermark"),
+                FOverlay("video", "watermark", "video"),
+            )
     conti.start()
