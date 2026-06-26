@@ -46,8 +46,8 @@ def media_probe(source_path) -> dict[str, Any]:
 
     format_info = probe_result["format"]
     meta: dict[str, Any] = {"audio_tracks": []}
-    source_vdur = 0
-    source_adur = 0
+    source_vdur: float = 0
+    source_adur: float = 0
 
     for stream in probe_result["streams"]:
         if stream["codec_type"] == "video":

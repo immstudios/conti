@@ -71,7 +71,7 @@ class ContiSource:
     # Class stuff
     #
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             return f"<Conti source: {self.base_name}>"
         except Exception:
@@ -85,14 +85,14 @@ class ContiSource:
     # Metadata helpers
     #
 
-    def load_meta(self):
+    def load_meta(self) -> None:
         self.meta = media_probe(self.path)
         if not self.meta:
             raise OSError(f"Unable to open {self.path}")
         self.probed = True
 
     @property
-    def original_duration(self):
+    def original_duration(self) -> float:
         if "duration" not in self.meta:
             self.load_meta()
         return self.meta["duration"]
@@ -104,17 +104,17 @@ class ContiSource:
         return self.meta.get("audio_tracks", [])
 
     @property
-    def duration(self):
+    def duration(self) -> float:
         return (self.mark_out or self.original_duration) - self.mark_in
 
     @property
-    def video_codec(self):
+    def video_codec(self) -> str:
         if not ("video/codec" in self.meta and self.probed):
             self.load_meta()
         return self.meta["video/codec"]
 
     @property
-    def video_index(self):
+    def video_index(self) -> int:
         if not ("video/index" in self.meta and self.probed):
             self.load_meta()
         return self.meta.get("video/index", -1)
@@ -124,7 +124,7 @@ class ContiSource:
     #
 
     @property
-    def is_running(self):
+    def is_running(self) -> bool:
         if not self.proc:
             return False
         return self.proc.poll() is None
@@ -132,12 +132,14 @@ class ContiSource:
     def read(self, *args, **kwargs):
         if not self.proc:
             self.open()
+        assert self.proc is not None
+        assert self.proc.stdout is not None
         data = self.proc.stdout.read(*args, **kwargs)
         if not data:
             return None
         return data
 
-    def open(self):
+    def open(self) -> None:
         conti_settings = self.parent.settings
         cmd = ["ffmpeg", "-hide_banner"]
 
@@ -186,19 +188,21 @@ class ContiSource:
             ]
         )
 
-        self.logger.debug("Executing %s", " ".join(cmd))
+        self.logger.debug(f"Executing {' '.join(cmd)}")
         self.proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
         )
 
-    def stop(self):
+    def stop(self) -> None:
         if not self.proc:
             return
-        self.logger.warning("Terminating source process")
+        self.logger.debug(f"Terminating {self}")
         os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
 
-    def send_command(self, cmd):
+    def send_command(self, cmd: str) -> None:
         if not self.proc:
+            return
+        if not self.proc.stdin:
             return
         self.proc.stdin.write(f"C{cmd}\n".encode())

@@ -5,7 +5,7 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from .common import CONTI_DEBUG, get_settings
 from .encoder import ContiEncoder
@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 
 
 class LoggerProtocol(Protocol):
-    def debug(self, *args, **kwargs): ...
-    def info(self, *args, **kwargs): ...
-    def warning(self, *args, **kwargs): ...
-    def error(self, *args, **kwargs): ...
+    def debug(self, *args: Any, **kwargs: Any): ...
+    def info(self, *args: Any, **kwargs: Any): ...
+    def warning(self, *args: Any, **kwargs: Any): ...
+    def error(self, *args: Any, **kwargs: Any): ...
 
 
 class Conti:
@@ -37,7 +37,7 @@ class Conti:
         *,
         logger: LoggerProtocol | None = None,
         **kwargs,
-    ):
+    ) -> None:
         self.get_next_item = get_next_item
         self.logger = logger or logging.getLogger(__name__)
         self.settings = get_settings(**kwargs)
@@ -100,7 +100,7 @@ class Conti:
             main_thread = threading.Thread(target=self.main_thread, daemon=True)
             main_thread.start()
 
-    def main_thread(self):
+    def main_thread(self) -> None:
         while self.should_run:
             if not self.playlist:
                 time.sleep(0.01)
@@ -110,14 +110,28 @@ class Conti:
                 if self.paused:
                     time.sleep(0.01)
                     continue
+
+                if not (
+                    self.current and self.current.proc and self.current.proc.stderr
+                ):
+                    time.sleep(0.01)
+                    continue
+
+                if not (
+                    self.encoder and self.encoder.proc and self.encoder.proc.stderr
+                ):
+                    time.sleep(0.01)
+                    continue
+
                 data = self.current.read(self.buff_size)
                 if not data:
                     self.current.proc.wait()
-                    if self.current.proc.poll() > 0:
+                    if self.current.proc.poll():
                         self.logger.error("Source error")
                         self.logger.error("\n".join(self.current.error_log))
                         self.logger.error(str(self.current.proc.stderr.read()))
                     break
+
                 try:
                     self.encoder.write(data)
                 except BrokenPipeError:
@@ -134,14 +148,14 @@ class Conti:
             self.playlist.pop(0)
         self.logger.debug("Conti main thread terminated")
 
-    def monitor_thread(self):
+    def monitor_thread(self) -> None:
         while self.should_run:
             while len(self.playlist) < self.playlist_length:
                 self.append_next_item()
             time.sleep(0.1)
         self.logger.debug("Conti monitor thread terminated")
 
-    def source_progress_thread(self):
+    def source_progress_thread(self) -> None:
         sbuff = b""
         while self.should_run:
             if not self.playlist:
@@ -174,7 +188,7 @@ class Conti:
                         sbuff += ch
         self.logger.debug("Conti source progress thread terminated")
 
-    def encoder_progress_thread(self):
+    def encoder_progress_thread(self) -> None:
         ebuff = b""
         while self.should_run:
             if not self.playlist:

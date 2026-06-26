@@ -5,3 +5,4 @@ setting.json
 settings.json
 output/*
 dist
+conti.egg-info
