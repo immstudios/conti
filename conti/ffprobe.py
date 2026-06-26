@@ -3,10 +3,7 @@ __all__ = ["ffprobe"]
 import json
 import os
 import subprocess
-import textwrap
 from typing import Any
-
-from .common import logger
 
 
 def ffprobe(input_file: str, verbose: bool = False) -> dict[str, Any]:
@@ -27,19 +24,17 @@ def ffprobe(input_file: str, verbose: bool = False) -> dict[str, Any]:
     exists = os.path.exists(input_file)
     path = input_file
     if not exists:
-        logger.error(f"ffprobe: file '{input_file}' does not exist")
+        #logger.error(f"ffprobe: file '{input_file}' does not exist")
         return {}
     cmd = ["ffprobe", "-show_format", "-show_streams", "-print_format", "json", path]
-    if verbose:
-        logger.debug(f"Executing {' '.join(cmd)}")
 
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
-        if verbose:
-            error_msg = textwrap.indent(result.stderr.decode("utf-8"), "    ")
-            logger.error(f"Unable to read media file {input_file}\n\n{error_msg}\n\n")
-        else:
-            logger.warning(f"Unable to read media file {input_file}")
+        #if verbose:
+        #    error_msg = textwrap.indent(result.stderr.decode("utf-8"), "    ")
+        #    #logger.error(f"Unable to read media file {input_file}\n\n{error_msg}\n\n")
+        #else:
+            #logger.warning(f"Unable to read media file {input_file}")
         return {}
 
     res = result.stdout.decode("utf-8")

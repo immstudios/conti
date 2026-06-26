@@ -5,16 +5,16 @@ import signal
 import subprocess
 from typing import TYPE_CHECKING, Any
 
-from .common import logger, get_base_name
+from .common import get_base_name
 from .probe import media_probe
 from .filters import FilterChain, RawFilter, FNull, FApad, FAtrim
 
 if TYPE_CHECKING:
-    from .conti import Conti
+    from .conti import Conti, LoggerProtocol
 
 
 class ContiSource:
-    def __init__(self, parent: "Conti", path: str, **kwargs: Any):
+    def __init__(self, parent: "Conti", path: str, **kwargs: Any) -> None:
         self.parent = parent
         self.path = path
         self.proc = None
@@ -76,6 +76,10 @@ class ContiSource:
             return "<Conti source: {}>".format(self.base_name)
         except Exception:
             return super(ContiSource, self).__repr__()
+
+    @property
+    def logger(self) -> "LoggerProtocol":
+        return self.parent.logger
 
     #
     # Metadata helpers
@@ -184,7 +188,7 @@ class ContiSource:
             ]
         )
 
-        logger.debug("Executing", " ".join(cmd))
+        self.logger.debug("Executing", " ".join(cmd))
         self.proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
         )
@@ -192,7 +196,7 @@ class ContiSource:
     def stop(self):
         if not self.proc:
             return
-        logger.warning("Terminating source process")
+        self.logger.warning("Terminating source process")
         os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
 

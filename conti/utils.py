@@ -1,4 +1,3 @@
-from .common import logger
 from .ffprobe import ffprobe
 
 __all__ = ["check_track_durations"]
@@ -14,8 +13,8 @@ def check_track_durations(source_path: str):
         durations.add(stream.get("duration", container_duration))
 
     res = len(durations) == 1
-    if not res:
-        logger.warning(f"{source_path} tracks duration mismatch: {durations}")
+    # if not res:
+    #     logger.warning(f"{source_path} tracks duration mismatch: {durations}")
     return res
 
 

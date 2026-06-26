@@ -1,6 +1,4 @@
 import os
-import logging
-
 
 DEVNULL = open(os.devnull, 'w')
 CONTI_DEBUG = {
@@ -55,9 +53,3 @@ def tc2s(tc: str, base: float = 25) -> float:
     res += ss
     res += ff / float(base)
     return res
-
-
-
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)

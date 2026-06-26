@@ -3,9 +3,8 @@ __all__ = ["ContiEncoder"]
 import os
 import signal
 import subprocess
+from typing import Any, TYPE_CHECKING
 
-
-from .common import logger
 from .filters import (
     FilterChain,
     FNull,
@@ -13,10 +12,13 @@ from .filters import (
     RawFilter
 )
 
+if TYPE_CHECKING:
+    from .conti import Conti, LoggerProtocol
 
-class ContiEncoder(object):
+
+class ContiEncoder:
     """Conti encoder process."""
-    def __init__(self, parent):
+    def __init__(self, parent: "Conti") -> None:
         """ContiEncoder constructor."""
         self.parent = parent
         self.pipe = None
@@ -32,11 +34,16 @@ class ContiEncoder(object):
         # based on conti settings(loudness and stuff)
         self.filter_chain.add(FANull("0:1", "audio"))
 
+    @property
+    def logger(self) -> "LoggerProtocol":
+        """Return logger."""
+        return self.parent.logger
+
     def __getitem__(self, key: str):
         """Return Conti settings value."""
         return self.parent.settings[key]
 
-    def get(self, key: str, default: str | None = None):
+    def get(self, key: str, default: str | None = None) -> Any:
         """Return Conti settings value with default."""
         return self.parent.settings.get(key, default)
 
@@ -47,12 +54,12 @@ class ContiEncoder(object):
     def stop(self):
         """Stop encoder process."""
         if not self.proc:
-            logger.warning("Unable to stop encoder. Not running.")
+            self.logger.warning("Unable to stop encoder. Not running.")
             return
         if self.proc.poll() is not None:
-            logger.warning("Unable to stop encoder. Already stopped")
+            self.logger.warning("Unable to stop encoder. Already stopped")
             return
-        logger.warning("Terminating encoder process")
+        self.logger.warning("Terminating encoder process")
         os.kill(self.proc.pid, signal.SIGKILL)
         self.proc.wait()
 
@@ -91,25 +98,30 @@ class ContiEncoder(object):
             cmd.append("-re")
 
         # Custom output filterchain
+        
+        filters: str | list[str]
+        audio_filters: str | list[str]
+        pre_filters: str | list[str]
 
-        filters = self.get("audio_filters", [])
-        if filters:
-            if type(filters) == str:
-                filters = [filters]
+
+        audio_filters = self.get("audio_filters", [])
+        if audio_filters:
+            if isinstance(audio_filters, str):
+                filters = [audio_filters]
             self.filter_chain.add(RawFilter(
                 "[audio]" + ",".join(filters) + "[audio]"
                 ))
 
         pre_filters = self.get("pre_filters", [])
         if pre_filters:
-            if type(pre_filters) == str:
+            if isinstance(pre_filters, str):
                 pre_filters = [pre_filters]
             for pf in pre_filters:
                 self.filter_chain.add(RawFilter(pf))
 
         filters = self.get("video_filters", [])
         if filters:
-            if type(filters) == str:
+            if isinstance(filters, str):
                 filters = [filters]
             self.filter_chain.add(RawFilter(
                 "[video]" + ",".join(filters) + "[video]"
@@ -149,7 +161,7 @@ class ContiEncoder(object):
             vfilters = profile.get("video_filters", [])
             afilters = profile.get("audio_filters", [])
             if vfilters:
-                if type(vfilters) == str:
+                if isinstance(vfilters, str):
                     vfilters = [vfilters]
                 self.filter_chain.add(RawFilter(
                     "[video{}]".format(i) +
@@ -157,7 +169,7 @@ class ContiEncoder(object):
                     "[video{}]".format(i)
                     ))
             if afilters:
-                if type(afilters) == str:
+                if isinstance(afilters, str):
                     afilters = [afilters]
                 self.filter_chain.add(RawFilter(
                     "[audio{}]".format(i) +
@@ -198,7 +210,7 @@ class ContiEncoder(object):
         print(cmd)
         print()
 
-        logger.debug(
+        self.logger.debug(
             "Starting encoder with the following settings:\n",
             " ".join(cmd)
         )
