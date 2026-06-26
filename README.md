@@ -9,7 +9,7 @@ About the project
 Conti is a simple linear video playout server. It enables you to broadcast
 your video files with minimal configuration and hardware requirements.
 
-Conti demo script can be modified to run simple stand-alone channels such as
+Included demo script can be modified to run simple stand-alone channels such as
 lobby TVs, info channels, community TV stations, and so on.
 
 For more complex projects, [Nebula](https://github.com/immstudios/nebula) 
