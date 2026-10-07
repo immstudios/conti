@@ -22,6 +22,12 @@ class ContiEncoder:
         self.error_log: list[str] = []
         self.filter_chain = FilterChain()
 
+        # Audio-only sources produce a single (audio) stream
+
+        if self.parent.settings["audio_only"]:
+            self.filter_chain.add(FANull("0:0", "audio"))
+            return
+
         # TODO: Replace with rawfilter doing something
         # based on conti settings(interlacing and stuff)
         self.filter_chain.add(FNull("0:0", "video"))
@@ -76,6 +82,7 @@ class ContiEncoder:
     def start(self):
         """Start encoder process."""
         cmd = ["ffmpeg", "-hide_banner"]
+        audio_only = self.parent.settings["audio_only"]
 
         # Most of the output formats needs -re switch to keep
         # the encoding speed at real time.
@@ -107,7 +114,7 @@ class ContiEncoder:
                 self.filter_chain.add(RawFilter(pf))
 
         filters = self.get("video_filters", [])
-        if filters:
+        if filters and not audio_only:
             if isinstance(filters, str):
                 filters = [filters]
             self.filter_chain.add(RawFilter(f"[video]{','.join(filters)}[video]"))
@@ -119,7 +126,7 @@ class ContiEncoder:
         voutputs = []
         aoutputs = []
         for i, profile in enumerate(self["outputs"]):
-            if profile.get("video", True):
+            if profile.get("video", True) and not audio_only:
                 voutputs.append(i)
             if profile.get("audio", True):
                 aoutputs.append(i)
@@ -129,7 +136,7 @@ class ContiEncoder:
             for voutput in voutputs:
                 vsplit += f"[video{voutput}]"
             self.filter_chain.add(RawFilter(vsplit))
-        else:
+        elif not audio_only:
             self.filter_chain.add(RawFilter("[video]nullsink"))
 
         if aoutputs:
@@ -143,7 +150,7 @@ class ContiEncoder:
         # Per-output stream filterchain
 
         for i, profile in enumerate(self["outputs"]):
-            vfilters = profile.get("video_filters", [])
+            vfilters = profile.get("video_filters", []) if not audio_only else []
             afilters = profile.get("audio_filters", [])
             if vfilters:
                 if isinstance(vfilters, str):
@@ -172,13 +179,10 @@ class ContiEncoder:
         # Create output profiles
 
         for i, profile in enumerate(self["outputs"]):
-            if self.parent.settings["audio_only"]:
-                cmd.extend(["-map", "[audio]"])
-            else:
-                if profile.get("video", True):
-                    cmd.extend(["-map", f"[video{i}]"])
-                if profile.get("audio", True):
-                    cmd.extend(["-map", f"[audio{i}]"])
+            if i in voutputs:
+                cmd.extend(["-map", f"[video{i}]"])
+            if i in aoutputs:
+                cmd.extend(["-map", f"[audio{i}]"])
 
             params = profile.get("params", {})
             for key in params:

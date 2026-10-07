@@ -172,12 +172,14 @@ class Conti:
                 else:
                     if ch in ["\n", "\r", b"\n", b"\r"]:
                         line = sbuff.decode("utf-8")
-                        if line.startswith("frame="):
-                            m = re.match(r".*frame=\s*(\d+)\s*fps.*", line)
+                        # Progress lines start with "frame=" or, when there
+                        # is no video stream, with "size="
+                        if line.startswith(("frame=", "size=")):
+                            m = re.search(r"time=\s*(\d+):(\d+):(\d+\.?\d*)", line)
                             if m:
-                                current_frame = int(m.group(1))
+                                hh, mm, ss = m.groups()
                                 source.position = (
-                                    current_frame / source.meta["video/fps_f"]
+                                    int(hh) * 3600 + int(mm) * 60 + float(ss)
                                 )
                                 self.progress_handler()
                         else:
@@ -202,7 +204,7 @@ class Conti:
                 else:
                     if ch in [b"\n", b"\r"]:
                         line = ebuff.decode("utf-8")
-                        if line.startswith("frame="):
+                        if line.startswith(("frame=", "size=")):
                             pass
                             # TODO: get fps/speed value to track performance
 
