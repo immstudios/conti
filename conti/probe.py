@@ -50,6 +50,10 @@ def media_probe(source_path) -> dict[str, Any]:
     source_adur: float = 0
 
     for stream in probe_result["streams"]:
+        if stream.get("disposition", {}).get("attached_pic"):
+            # Cover art embedded in audio files is not a video stream
+            continue
+
         if stream["codec_type"] == "video":
             # Frame rate detection
             fps_n, fps_d = [float(e) for e in stream["r_frame_rate"].split("/")]
